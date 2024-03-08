@@ -64,6 +64,11 @@ class gaussian_input_generator(object):
                 f"opt=(calcfc,ts,noeigentest) scf=xqc {theory}/{basis_set} {solvent_input}",
                 f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read"
             )
+        if workflow_type == "custom":
+            self.tasks = (
+                f"opt=CalcFc {theory}/{basis_set} {solvent_input}scf=xqc ",
+                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read"
+            )
         elif workflow_type == "test":
             self.tasks = (
                 f"Opt B3LYP/6-31G** SCRF=(Solvent=TetraHydroFuran) EmpiricalDispersion=GD3",
@@ -91,7 +96,9 @@ class gaussian_input_generator(object):
 
         for conf_id, conf_coord in enumerate(self.molecule.conformer_coordinates):
             # set conformer
-            conf_name = f"{self.molecule.inchikey}_conf_{conf_id}"
+            simplified_name = ''.join(e for e in self.molecule.can if e.isalnum())
+            conf_name = f"{simplified_name}_conf_{conf_id}"
+            # conf_name = f"{self.molecule.inchikey}_conf_{conf_id}"
 
             # coordinates block
             geom_np_array = np.concatenate((np.array([self.molecule.elements]).T, conf_coord), axis=1)
