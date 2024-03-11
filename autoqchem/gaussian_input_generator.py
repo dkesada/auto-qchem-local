@@ -66,8 +66,8 @@ class gaussian_input_generator(object):
             )
         if workflow_type == "custom":
             self.tasks = (
-                f"opt=CalcFc {theory}/{basis_set} {solvent_input}scf=xqc ",
-                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read"
+                f"opt {theory}/{basis_set} {solvent_input}scf=xqc EmpiricalDispersion=GD3",
+                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read EmpiricalDispersion=GD3"
             )
         elif workflow_type == "test":
             self.tasks = (
@@ -83,7 +83,7 @@ class gaussian_input_generator(object):
         """Creates the Gaussian input files for each conformer of the molecule."""
 
         # prepare directory for gaussian files
-        cleanup_directory_files(self.directory, types=["gjf"])
+        # cleanup_directory_files(self.directory, types=["gjf"])
         os.makedirs(self.directory, exist_ok=True)
 
         # resources configuration
@@ -94,11 +94,13 @@ class gaussian_input_generator(object):
 
         logger.info(f"Generating Gaussian input files for {self.molecule.mol.GetNumConformers()} conformations.")
 
+
+
         for conf_id, conf_coord in enumerate(self.molecule.conformer_coordinates):
             # set conformer
             simplified_name = ''.join(e for e in self.molecule.can if e.isalnum())
-            conf_name = f"{simplified_name}_conf_{conf_id}"
-            # conf_name = f"{self.molecule.inchikey}_conf_{conf_id}"
+            # conf_name = f"{simplified_name}_conf_{conf_id}"
+            conf_name = f"{self.molecule.inchikey}_conf_{conf_id}"
 
             # coordinates block
             geom_np_array = np.concatenate((np.array([self.molecule.elements]).T, conf_coord), axis=1)
@@ -122,7 +124,7 @@ class gaussian_input_generator(object):
                 output += resource_block
                 output += f"%Chk={name}_{i}.chk\n"
                 output += f"# {task}\n\n"
-                output += f"{name}\n\n"
+                output += f"{self.molecule.can}\n"
                 output += f"{charge} {multiplicity}\n"
                 output += f"{coords_block.strip()}\n"
                 output += f"\n"
