@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 def create_gjf_for_molecule(smiles, workdir='./output_gjf', workflow_type="custom", theory="B3LYP", solvent="None",
-                            light_basis_set="6-31+G(d,p)", heavy_basis_set="LANL2DZ", generic_basis_set="genecp",
-                            max_light_atomic_number=36) -> None:
+                            light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD", generic_basis_set="genecp",
+                            max_light_atomic_number=25) -> None:
     """
     Generate Gaussian input files for a molecule
 

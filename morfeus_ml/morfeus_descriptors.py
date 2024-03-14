@@ -7,8 +7,10 @@ import numpy as np
 
 from rdkit import Chem
 
-from morfeus.conformer import ConformerEnsemble
-from morfeus import Sterimol, BuriedVolume, XTB as morf_xtb
+from morfeus.conformer import ConformerEnsemble, Conformer
+from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
+from data import metals
+
 
 # constants
 os.environ['NWCHEM_BASIS_LIBRARY'] = '/home/zuranski/miniconda3/envs/qml/share/nwchem/libraries/'
@@ -37,14 +39,47 @@ def compute(smiles, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, 
 
     # compute xtb for the conformers for descriptor calculations
     for conf in ce:
-        conf.xtb = morf_xtb(ce.elements, conf.coordinates, solvent=solvent, version='2')
+        conf.xtb = XTB(ce.elements, conf.coordinates, solvent=solvent, version='2')
+
+    return ce
+
+
+def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, solvent=None):
+    """Calculates a conformer ensemble using rdkit, then optimizes
+    each conformer geometry using GFN2-xTB and calculates their properties. Additionally, this function loads a
+    previous conformer in an .xyz file and adds it to the ensemble. Usually, this conformer is very close to the
+    minimal energy and already optimized. """
+
+    # create conformer ensemble
+    ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
+                                      n_threads=os.cpu_count() - 1)
+
+    # optimize conformer geometries
+    ce.optimize_qc_engine(program=program,
+                          model={'method': method, "basis": basis, "solvent": solvent},
+                          procedure="geometric")
+    ce.prune_rmsd()
+
+    # add the xyz conformer to the ensemble
+    ce.add_conformers([xyz_conf.coordinates])
+
+    # compute energies of the single point calculations
+    ce.sp_qc_engine(program=program, model={'method': method, "basis": basis, "solvent": solvent})
+
+    # sort on energy and generate an rdkit molecule
+    ce.sort()
+    ce.generate_mol()
+
+    # compute xtb for the conformers for descriptor calculations
+    for conf in ce:
+        conf.xtb = XTB(ce.elements, conf.coordinates, solvent=solvent, version='2')
 
     return ce
 
 
 def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
                     sterimol_pairs=[]):
-    """Extract descriptorrs from the conformational ensemble"""
+    """Extract descriptors from the conformational ensemble"""
 
     def get_substructure_match(conf_ensemble, substructure):
         """Helper function to find substructure match"""
@@ -82,30 +117,19 @@ def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
         labels = make_substructure_labels(match, substructure_labels)
     else:
         match = None
-
+    
+    conf_idx = 0
     # loop over the conformers and get properties
     for conf in conf_ensemble.conformers:
 
-        # XTB
-        x = conf.xtb
-
-        # molecular features
-        conf.properties['IP'] = x.get_ip(corrected=True)
-        conf.properties['EA'] = x.get_ea()
-        conf.properties['HOMO'] = x.get_homo()
-        conf.properties['LUMO'] = x.get_lumo()
-
-        dip = x.get_dipole()
-        conf.properties['dipole'] = np.sqrt(dip.dot(dip))
-
-        conf.properties['electro'] = x.get_global_descriptor("electrophilicity", corrected=True)
-        conf.properties['nucleo'] = x.get_global_descriptor("nucleophilicity", corrected=True)
+        # Get conformer properties
+        get_conf_props(conf)
 
         if match is not None:
             # atomic features
-            charges = x.get_charges()
-            electro = x.get_fukui('electrophilicity')
-            nucleo = x.get_fukui('nucleophilicity')
+            charges = conf.xtb.get_charges()
+            electro = conf.xtb.get_fukui('electrophilicity')
+            nucleo = conf.xtb.get_fukui('nucleophilicity')
             for idx, label in zip(match, labels):
                 # charge, electrophilicity, nucleophilicity
                 conf.properties[f"{label}_charge"] = charges[idx]
@@ -132,8 +156,106 @@ def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
     for key in conf_ensemble.get_properties().keys():
         props[f"{key}_Boltz"] = conf_ensemble.boltzmann_statistic(key)
         props[f"{key}_Emin"] = conf_ensemble.get_properties()[key][0]
-
+    
     return pd.Series(props)
+
+
+def get_conf_props(conf, elements=None, coordinates=None, solvent=None):
+    """
+    Get the properties of a conformer. If the conformer is None, then one will be created with the provided elements,
+    coordinates and solvent.
+    """
+    if not conf:
+        conf = Conformer(elements, coordinates)
+        conf.xtb = XTB(elements, coordinates, solvent=solvent, version='2')
+
+    # molecular features
+    conf.properties['IP'] = conf.xtb.get_ip(corrected=True)
+    conf.properties['EA'] = conf.xtb.get_ea()
+    conf.properties['HOMO'] = conf.xtb.get_homo()
+    conf.properties['LUMO'] = conf.xtb.get_lumo()
+
+    dip = conf.xtb.get_dipole()
+    conf.properties['dipole'] = np.sqrt(dip.dot(dip))
+
+    conf.properties['electro'] = conf.xtb.get_global_descriptor("electrophilicity", corrected=True)
+    conf.properties['nucleo'] = conf.xtb.get_global_descriptor("nucleophilicity", corrected=True)
+
+    # Global XTB
+    conf.properties["electro"] = conf.xtb.get_global_descriptor("electrophilicity", corrected=True)
+    conf.properties["nucleo"] = conf.xtb.get_global_descriptor("nucleophilicity", corrected=True)
+    conf.properties["electrofug"] = conf.xtb.get_global_descriptor("electrofugality", corrected=True)
+    conf.properties["nucleofug"] = conf.xtb.get_global_descriptor("nucleofugality", corrected=True)
+
+    # SASA
+    sasa = SASA(conf.elements, conf.coordinates)
+    conf.properties["SASA_area"] = sasa.area
+    conf.properties["SASA_vol"] = sasa.volume
+
+    # Dispersion
+    disp = Dispersion(conf.elements, conf.coordinates)
+    conf.properties["Dispersion_area"] = disp.area
+    conf.properties["Dispersion_vol"] = disp.volume
+    conf.properties["Dispersion_P_int"] = disp.p_int
+
+    # Metal part
+
+    metallic = False
+    # Check if there's a metal in the configuration
+    idx = [x for x in range(len(conf.elements)) if conf.elements[x] in metals]
+    if len(idx) > 0:
+        metallic = True
+        metal_idx = idx[0] + 1  # The index has to be 1-indexed for morfeus
+
+    # Buried volumes (VBur)
+    if metallic:
+        bv = BuriedVolume(conf.elements, conf.coordinates, metal_idx)
+        bv.octant_analysis()
+        conf.properties["VBur"] = bv.buried_volume
+        conf.properties["Free_VBur"] = bv.free_volume
+        bv.compute_distal_volume(method="sasa")
+        conf.properties["Sasa_distal_VBur"] = bv.distal_volume
+        conf.properties["Sasa_mol_VBur"] = bv.molecular_volume
+        bv.compute_distal_volume(method="buried_volume")
+        conf.properties["Buried_distal_VBur"] = bv.distal_volume
+        conf.properties["Buried_mol_VBur"] = bv.molecular_volume
+
+    # Pyramid
+    if metallic:
+        pyr = Pyramidalization(conf.coordinates, metal_idx)
+        conf.properties["Pyr_alpha"] = pyr.alpha
+        conf.properties["Pyr_P"] = pyr.P
+        conf.properties["Pyr_P_angle"] = pyr.P_angle
+
+    # Bite angle
+    # if metallic:
+    #     bite = BiteAngle(conf.coordinates, metal_idx, metal_idx-1, metal_idx+1)  # Assuming that the other atoms are before and after the metal...
+    #     conf.properties["Bite_angle"] = bite.angle
+
+    # Solid angle
+    if metallic:
+        solid = SolidAngle(conf.elements, conf.coordinates, metal_idx)
+        conf.properties["Cone_angle"] = solid.cone_angle
+        conf.properties["Solid_angle"] = solid.solid_angle
+        conf.properties["Solid_angle_G"] = solid.G
+
+    # Cone angle
+    if metallic:
+        cone_angle = ConeAngle(conf.elements, conf.coordinates, metal_idx)
+        conf.properties["Cone_angle"] = cone_angle.cone_angle
+        conf.properties["Cone_angle_NAtoms"] = len(cone_angle.tangent_atoms)
+
+    # Sterimol
+    if metallic:
+        sterimol = Sterimol(conf.elements, conf.coordinates, 1, metal_idx)  # Dummy H atom is 1?
+        conf.properties["Sterimol_L"] = sterimol.L_value
+        conf.properties["Sterimol_B_1"] = sterimol.B_1_value
+        conf.properties["Sterimol_B_5"] = sterimol.B_5_value
+        sterimol.bury(method="delete")
+        conf.properties["Sterimol_bur_L"] = sterimol.L_value
+        conf.properties["Sterimol_bur_B_1"] = sterimol.B_1_value
+        conf.properties["Sterimol_bur_B_5"] = sterimol.B_5_value
+
 
 
 if __name__ == "__main__":
@@ -141,7 +263,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Compute Conformational Ensemble and its Features')
     parser.add_argument("smiles", type=str, help="SMILES string of the molecule")
-    parser.add_argument("name", type=str, help="Name of te molecule")
+    parser.add_argument("name", type=str, help="Name of the molecule")
     parser.add_argument("output_path", type=str, help="Storage output path")
     parser.add_argument("--n_confs", type=int, help="Optional number of conformers to initially generate with RDKit. "
                                                     "If not specified a default is used based on the number of"
@@ -174,6 +296,7 @@ if __name__ == "__main__":
     print(args.__dict__)
 
     # compute the conformational ensemble
+    args.smiles = "Cl[Cu][P](C1=CC=CC=C1)(C2=CC=CC=C2)C3=CC=CC=C3"
     m = compute(args.smiles, n_confs=args.n_confs, solvent=args.solvent)
     print(m.get_energies())
 
@@ -184,7 +307,9 @@ if __name__ == "__main__":
 
         with open(f"{args.output_path}/{args.name}_descriptors.csv", "wb") as f:
             descs.to_frame(args.smiles).T.to_csv(f, index_label="smiles")
-
+    
+    print(m)
+    print(f)
     # save output
-    with open(f"{args.output_path}/{args.name}.pkl", "wb") as f:
-        pickle.dump(m, f)
+    #with open(f"{args.output_path}/{args.name}.pkl", "wb") as f:
+    #    pickle.dump(m, f)

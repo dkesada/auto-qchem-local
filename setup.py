@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
     name='auto-qchem',
-    version='1.3.2',
-    packages=['autoqchem'],
+    version='1.3.3dev',
+    packages=['autoqchem', 'morfeus_ml'],
     data_files=['config.yml'],
     url='https://github.com/doyle-lab-ucla/auto-qchem',
     license='GPL',

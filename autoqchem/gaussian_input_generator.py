@@ -64,7 +64,12 @@ class gaussian_input_generator(object):
                 f"opt=(calcfc,ts,noeigentest) scf=xqc {theory}/{basis_set} {solvent_input}",
                 f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read"
             )
-        if workflow_type == "custom":
+        elif workflow_type == "custom":
+            self.tasks = (
+                f"opt {theory}/{basis_set} {solvent_input}scf=xqc EmpiricalDispersion=GD3",
+                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read EmpiricalDispersion=GD3"
+            )
+        elif workflow_type == "custom_metal":
             self.tasks = (
                 f"opt {theory}/{basis_set} {solvent_input}scf=xqc EmpiricalDispersion=GD3",
                 f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read EmpiricalDispersion=GD3"
@@ -90,6 +95,9 @@ class gaussian_input_generator(object):
         n_processors = max(1, min(config['resources']['max_processors'],
                                   self.molecule.mol.GetNumAtoms() // config['resources']['atoms_per_processor']))
         ram = n_processors * config['resources']['ram_per_processor']
+        # Maximum allowed RAM
+        if ram > 16:
+            ram = 16
         resource_block = f"%nprocshared={n_processors}\n%mem={ram}GB\n"
 
         logger.info(f"Generating Gaussian input files for {self.molecule.mol.GetNumConformers()} conformations.")
