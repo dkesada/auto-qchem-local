@@ -1,5 +1,6 @@
 import os
 import argparse
+import sys
 import logging
 from datetime import datetime
 
@@ -7,7 +8,6 @@ from morfeus_ml.morfeus_descriptors import *
 from morfeus import read_xyz
 
 
-logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -37,12 +37,20 @@ def extract_properties_compound(file_name, output_path, n_confs, solvent):
 
 if __name__ == "__main__":
     # Prepare the logger to output into both console and a file with the desired format
-    date = datetime.now()
-    file_log_handler = logging.FileHandler(filename=date.strftime('morfeus_%d_%m_%Y_%H_%M.log'), mode='w')
-    logger.addHandler(file_log_handler)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
 
-    logger.info('Started')
-    logger.info(f'Current time: {datetime.now()}')
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(formatter)
+
+    date = datetime.now()
+    file_handler = logging.FileHandler(filename=date.strftime('morfeus_%d_%m_%Y_%H_%M.log'), mode='w')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stdout_handler)
 
     parser = argparse.ArgumentParser(description='Compute Conformational Ensemble and its Features')
     parser.add_argument("file_name", type=str, help="Name of the files .xyz and .smi files")
@@ -58,7 +66,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    logger.info('Started')
+
     extract_properties_compound(args.file_name, args.output_path, args.n_confs, args.solvent)
 
     logger.info('Finished')
-    logger.info(f'Current time: {datetime.now()}')

@@ -9,11 +9,64 @@ from rdkit import Chem
 
 from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
+from morfeus.data import atomic_symbols
 from data import metals
+from geometry import get_closest_atom_to_metal
 
 
 # constants
 os.environ['NWCHEM_BASIS_LIBRARY'] = '/home/zuranski/miniconda3/envs/qml/share/nwchem/libraries/'
+
+
+def convert_to_symbol(elements):
+    """ Converts an element vector from number format to str format """
+    return np.array(list(map(lambda x: atomic_symbols[x], elements)))
+
+
+def get_specific_atom_sterimol(elements, coords, metal_idx):
+    """
+    We have 3 different cases: metal-phosphorus, nitrogen-metal-nitrogen and metal-(nitrogen-carbon-nitrogen)
+    In each case, we want different indexes for the sterimol: the phosphorus index, the closer nitrogen index and
+    the carbon between the nitrogens index
+    """
+    res = None
+
+    # Standardize the str format
+    if not isinstance(elements[0], str):
+        elements = convert_to_symbol(elements)
+
+    # The case of the phosphorus, I get the closest one to the metal
+    if 'P' in elements:
+        res = get_closest_atom_to_metal('P', elements, metal_idx, coords)
+
+    return res
+
+
+def reorder_coords(coords, elems, new_elems):
+    """
+    Reorders the coordinates of a conformer to have its atoms in the same order provided by new_elems.
+    This is necesary when introducing an external conformer from an .xyz file into a conformer ensemble,
+    because the ensemble may have different ordering
+    """
+    # Check for the same format in elems and new_elems
+    if isinstance(elems[0], str) and not isinstance(new_elems[0], str):
+        new_elems = convert_to_symbol(new_elems)
+    elif isinstance(new_elems[0], str) and not isinstance(elems[0], str):
+        elems = convert_to_symbol(elems)
+
+    # Move each coordinate atom by atom
+    new_coords = coords.copy()
+    idx = 0
+    for e in new_elems:
+        # Search the first corresponding atom and move it
+        idx_old = np.where(e == elems)[0][0]
+        new_coords[idx] = coords[idx_old]
+        # Delete that atom from the old coords
+        elems = np.delete(elems, idx_old)
+        coords = np.delete(coords, idx_old, 0)
+        idx += 1
+
+    return new_coords
 
 
 def compute(smiles, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, solvent=None):
@@ -61,7 +114,8 @@ def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2
     ce.prune_rmsd()
 
     # add the xyz conformer to the ensemble
-    ce.add_conformers([xyz_conf.coordinates])
+    new_coords = reorder_coords(xyz_conf.coordinates, xyz_conf.elements, ce.elements)
+    ce.add_conformers([new_coords])
 
     # compute energies of the single point calculations
     ce.sp_qc_engine(program=program, model={'method': method, "basis": basis, "solvent": solvent})
@@ -247,7 +301,8 @@ def get_conf_props(conf, elements=None, coordinates=None, solvent=None):
 
     # Sterimol
     if metallic:
-        sterimol = Sterimol(conf.elements, conf.coordinates, 1, metal_idx)  # Dummy H atom is 1?
+        idx = get_specific_atom_sterimol(conf.elements, conf.coordinates, metal_idx-1)
+        sterimol = Sterimol(conf.elements, conf.coordinates, idx+1, metal_idx)
         conf.properties["Sterimol_L"] = sterimol.L_value
         conf.properties["Sterimol_B_1"] = sterimol.B_1_value
         conf.properties["Sterimol_B_5"] = sterimol.B_5_value
