@@ -11,7 +11,7 @@ from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
 from morfeus.data import atomic_symbols
 from data import metals
-from geometry import get_closest_atom_to_metal
+from geometry import get_closest_atom_to_metal, get_central_carbon
 
 
 # constants
@@ -38,6 +38,9 @@ def get_specific_atom_sterimol(elements, coords, metal_idx):
     # The case of the phosphorus, I get the closest one to the metal
     if 'P' in elements:
         res = get_closest_atom_to_metal('P', elements, metal_idx, coords)
+    # The case of the metal-(nitrogen-carbon-nitrogen), I get the carbon in the middle
+    else:
+        res = get_central_carbon(elements, coords, metal_idx)
 
     return res
 
@@ -76,6 +79,9 @@ def compute(smiles, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, 
     # create conformer ensemble
     ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
                                       n_threads=os.cpu_count() - 1)
+    # To avoid inconsistent charge and multiplicity
+    ce.charge = 0
+    ce.multiplicity = 1
 
     # optimize conformer geometries
     ce.optimize_qc_engine(program=program,
@@ -104,8 +110,17 @@ def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2
     minimal energy and already optimized. """
 
     # create conformer ensemble
-    ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
-                                      n_threads=os.cpu_count() - 1)
+    try:
+        ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
+                                          n_threads=os.cpu_count() - 1)
+    except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
+        ce = ConformerEnsemble.from_ob_ga(smiles)
+        if n_confs and n_confs < len(ce.conformers):
+            ce.conformers = ce.conformers[0:n_confs]
+
+    # To avoid inconsistent charge and multiplicity
+    ce.charge = 0
+    ce.multiplicity = 1
 
     # optimize conformer geometries
     ce.optimize_qc_engine(program=program,
