@@ -13,11 +13,6 @@ from morfeus import read_xyz
 logger = logging.getLogger(__name__)
 
 
-class InvalidSmiles(Exception):
-    """ Raised when a SMILES cannot be converted into a rdkit mol """
-    pass
-
-
 class MismatchAtomNumber(Exception):
     """ Raised when the number of atoms in a SMILES code does not match the number of atoms in a .xyz file"""
     def __init__(self, smi_n_atoms, xyz_n_atoms):
@@ -92,18 +87,18 @@ def extract_properties_compound(file_name, output_path, n_confs, solvent):
     smiles = smiles[0]
     smiles = smiles.replace('\n', '')
 
-    # mol = Chem.MolFromSmiles(smiles)
+    mol = Chem.MolFromSmiles(smiles)
 
-    # if not mol:
-    #     raise InvalidSmiles
+    if not mol:
+        raise InvalidSmiles
 
-    # smi_n_atom = Chem.AddHs(mol).GetNumAtoms()
+    smi_n_atom = Chem.AddHs(mol).GetNumAtoms()
 
     try:
         # Read the .xyz file
         elements, coords = read_xyz(f'{file_name}.xyz')
-        # if len(elements) != Chem.AddHs(mol).GetNumAtoms():
-        #     raise MismatchAtomNumber(smi_n_atom, len(elements))
+        if len(elements) != Chem.AddHs(mol).GetNumAtoms():
+            raise MismatchAtomNumber(smi_n_atom, len(elements))
         conf = Conformer(elements, coords)
 
         # Create the conformer ensemble
@@ -129,27 +124,29 @@ def compute_files(data_dir='./', output_path='jobs', n_confs=5, solvent=None):
     # Search each directory for .smi files
     dirs = next(os.walk(data_dir))
 
-    # Base case, no more directories
-    if len(dirs[1]) == 0:
-        # Get the .smi files in this folder
-        names = np.array(dirs[2])
-        names = names[list(map(lambda x: x.endswith('.smi'), names))]
-        names = list(map(lambda x: x[:-4], names))
+    # Base case, process the found files or do nothing if there is none and there are no more directories
 
-        for n in names:
-            logger.info(f'Now processing file {n}')
-            try:
-                extract_properties_compound(n, output_path, n_confs, solvent)
-            except InvalidSmiles:
-                logger.warning(f'Could not convert molecule smiles from file {n}.smi')
-            except MismatchAtomNumber as e:
-                logger.warning(f'Number of atoms does not match in both .smi ({e.smi_n_atoms} atoms) and .xyz '
-                               f'({e.xyz_n_atoms}) files. Possible erroneous SMILE code')
-            except ValidationError as e:
-                logger.warning(f'Problems converting molecule with rdkit. Validation error: {e}')
+    # Get the .smi files in this folder
+    names = np.array(dirs[2])
+    names = names[list(map(lambda x: x.endswith('.smi'), names))]
+    names = list(map(lambda x: x[:-4], names))
+
+    for n in names:
+        logger.info(f'Now processing file {n}')
+        try:
+            extract_properties_compound(n, output_path, n_confs, solvent)
+        except InvalidSmiles:
+            logger.warning(f'Could not convert molecule smiles from file {n}.smi')
+        except MismatchAtomNumber as e:
+            logger.warning(f'Number of atoms does not match in both .smi ({e.smi_n_atoms} atoms) and .xyz '
+                           f'({e.xyz_n_atoms}) files. Possible erroneous SMILE code')
+        except ValidationError as e:
+            logger.warning(f'Problems converting molecule with rdkit. Validation error: {e}')
+        except IndexError as e:
+            logger.warning(f'Possible problems with the .xyz file and conversion. Index error: {e}')
 
     # Recursive case, further directories
-    else:
+    if len(dirs[1]) > 0:
         prev_dir = os.getcwd()
         for d in dirs[1]:
             # Change the wd to the subdirectory

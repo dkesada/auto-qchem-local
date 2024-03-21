@@ -9,18 +9,56 @@ from rdkit import Chem
 
 from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
-from morfeus.data import atomic_symbols
+from morfeus.data import atomic_symbols, atomic_numbers
 from data import metals
 from geometry import get_closest_atom_to_metal, get_central_carbon
+
+import openbabel.pybel as pybel
+from openbabel.openbabel import OBMol
+from math import isnan
 
 
 # constants
 os.environ['NWCHEM_BASIS_LIBRARY'] = '/home/zuranski/miniconda3/envs/qml/share/nwchem/libraries/'
 
 
+class InvalidSmiles(Exception):
+    """ Raised when a SMILES cannot be converted into either a rdkit or openbabel mol """
+    pass
+
+
 def convert_to_symbol(elements):
     """ Converts an element vector from number format to str format """
     return np.array(list(map(lambda x: atomic_symbols[x], elements)))
+
+
+def convert_to_numbers(elements):
+    """ Converts an element vector from str format to number format """
+    return np.array(list(map(lambda x: atomic_numbers[x], elements)))
+
+
+def convert_to_ob_mol(smiles, n_confs):
+    """ Attempt to convert a smiles into an openbabel molecule with the different forcefields available """
+    coords_nan = True
+
+    py_mol = pybel.readstring("smi", smiles)
+    py_mol.make3D(forcefield='mmff94')
+    ce = ConformerEnsemble.from_ob_ga(py_mol.OBMol, num_conformers=n_confs)
+
+    if isnan(sum(sum(ce[0].coordinates))):  # If there are nans in the coordinates, try another forcefield
+        py_mol = pybel.readstring("smi", smiles)
+        py_mol.make3D(forcefield='uff')  # The default forcefield can generate NaNs on non-convertible rdkit smiles
+        ce = ConformerEnsemble.from_ob_ga(py_mol.OBMol, num_conformers=n_confs)
+
+    if isnan(sum(sum(ce[0].coordinates))):
+        py_mol = pybel.readstring("smi", smiles)
+        py_mol.make3D(forcefield='ghemical')  # The default forcefield can generate NaNs on non-convertible rdkit smiles
+        ce = ConformerEnsemble.from_ob_ga(py_mol.OBMol, num_conformers=n_confs)
+
+    if isnan(sum(sum(ce[0].coordinates))):  # If no conversion works, raise an exception
+        raise InvalidSmiles('Could not convert SMILES with either rdkit or openbabel')
+
+    return ce
 
 
 def get_specific_atom_sterimol(elements, coords, metal_idx):
@@ -79,6 +117,9 @@ def compute(smiles, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, 
     # create conformer ensemble
     ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
                                       n_threads=os.cpu_count() - 1)
+    # except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
+    #     ce = convert_to_ob_mol(smiles, n_confs)
+
     # To avoid inconsistent charge and multiplicity
     ce.charge = 0
     ce.multiplicity = 1
@@ -110,13 +151,10 @@ def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2
     minimal energy and already optimized. """
 
     # create conformer ensemble
-    try:
-        ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
-                                          n_threads=os.cpu_count() - 1)
-    except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
-        ce = ConformerEnsemble.from_ob_ga(smiles)
-        if n_confs and n_confs < len(ce.conformers):
-            ce.conformers = ce.conformers[0:n_confs]
+    ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
+                                      n_threads=os.cpu_count() - 1)
+    # except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
+    #    ce = convert_to_ob_mol(smiles, n_confs)
 
     # To avoid inconsistent charge and multiplicity
     ce.charge = 0
