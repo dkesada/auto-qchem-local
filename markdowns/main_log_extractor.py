@@ -1,6 +1,7 @@
 # Code partly adapted from https://github.com/doyle-lab-ucla/auto-qchem/blob/master/autoqchem/gaussian_log_extractor.py
 
 import logging
+import argparse
 from datetime import datetime
 import re
 import os
@@ -461,7 +462,6 @@ class OptimizationIncompleteException(Exception):
     pass
 
 
-
 def test_extractor(log_path):
     extractor = gaussian_log_extractor(log_path)
     desc = extractor.get_descriptors()
@@ -542,7 +542,7 @@ def export_to_pandas(log_path):
 
 
 def export_to_csv(dir_path):
-    """ Loads all files in the ./input folder and processes each .log file found there """
+    """ Loads all files in the dir_path folder and subdirectories and processes each .log file found """
     dir = os.fsencode(dir_path)
     res = pd.DataFrame()
 
@@ -562,18 +562,70 @@ def export_to_csv(dir_path):
     res.to_csv('extracted_values.csv', index=False)
 
 
+def compute_log_files(data_dir='./'):
+    """
+    Recursive function that join the dft properties inside separate .log files into a single one
+    """
+    # Search each directory for .log files
+    os.chdir(data_dir)
+    dirs = next(os.walk('./'))
+
+    # Base case, process the found files or do nothing if there is none and there are no more directories
+    res = pd.DataFrame()
+
+    # Get the .log files in this folder
+    names = np.array(dirs[2])
+    names = names[list(map(lambda x: x.endswith('.log'), names))]
+    names = list(map(lambda x: x[:-4], names))
+
+    for n in names:
+        logger.info(f'Now processing file {n}')
+        try:
+            df = export_to_pandas(f'{data_dir}/{n}.log')
+            df.insert(0, 'file_name', n)  # Insert the file name for joining with morfeus output later
+            if len(df.columns) > len(res.columns):
+                res = pd.concat([df, res], axis=0)
+            else:
+                res = pd.concat([res, df], axis=0)
+        except AttributeError as e:
+            logging.warning(f'Possible problem processing the log file: {e}')
+
+    # Recursive case, further directories
+    if len(dirs[1]) > 0:
+        prev_dir = os.getcwd()
+        for d in dirs[1]:
+            # Change the wd to the subdirectory
+            res_rec = compute_log_files(f'{prev_dir}/{d}')
+            if len(res_rec.columns) > len(res.columns):
+                res = pd.concat([res_rec, res], axis=0)
+            else:
+                res = pd.concat([res, res_rec], axis=0)
+
+        os.chdir(prev_dir)
+
+    return res
+
 
 if __name__ == "__main__":
     # Prepare the logger to output into both console and a file with the desired format
-    date = datetime.now()
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
-    logger = logging.getLogger(__name__)
-    # file_log_handler = logging.FileHandler(filename=date.strftime('reactions_%d_%m_%Y_%H_%M.log'), mode='w')
-    # logger.addHandler(file_log_handler)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(formatter)
+
+    logger.addHandler(stdout_handler)
+
+    parser = argparse.ArgumentParser(description='Generate dft .csv dataset from intermediary .log files')
+    parser.add_argument("--data_dir", type=str, help="Directory where to search for .log files", default='./')
+
+    args = parser.parse_args()
 
     logger.info('Started')
 
-    #test_extractor(sys.argv[2])
-    export_to_csv(sys.argv[1])
+    res = compute_log_files(data_dir=args.data_dir)
+    res.reset_index(drop=True, inplace=True)
+    res.to_csv('log_values.csv', index=False)
 
     logger.info('Finished')

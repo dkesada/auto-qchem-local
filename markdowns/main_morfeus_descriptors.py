@@ -144,6 +144,8 @@ def compute_files(data_dir='./', output_path='jobs', n_confs=5, solvent=None):
             logger.warning(f'Problems converting molecule with rdkit. Validation error: {e}')
         except IndexError as e:
             logger.warning(f'Possible problems with the .xyz file and conversion. Index error: {e}')
+        except Exception as e:
+            logger.warning(f'Unexpected exception: {e}')
 
     # Recursive case, further directories
     if len(dirs[1]) > 0:
