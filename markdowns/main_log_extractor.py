@@ -521,11 +521,17 @@ def filter_extractor_dict(dictionary):
         dictionary['atom_descriptors'].pop('X', None)
         dictionary['atom_descriptors'].pop('Y', None)
         dictionary['atom_descriptors'].pop('Z', None)
+        dictionary['atom_descriptors'].pop('VBur', None)
+        dictionary['atom_descriptors'].pop('Mulliken_charge', None)
+        dictionary['atom_descriptors'].pop('APT_charge', None)
         dictionary['atom_descriptors'].pop(0, None)
         dictionary['atom_descriptors'].pop('NMR_shift', None)
         dictionary['atom_descriptors'].pop('NMR_anisotropy', None)
     if dictionary['modes']:
         dictionary['modes'].pop('Frequencies', None)
+        dictionary['modes'].pop('Red masses', None)
+        dictionary['modes'].pop('Frc consts', None)
+        dictionary['modes'].pop('IR Inten', None)
     dictionary.pop('mode_vectors', None)
     dictionary.pop('transitions', None)
     # dictionary['labels'] = {'labels': dictionary['labels']}  # Labels gives an error

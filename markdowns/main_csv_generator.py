@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     logger.addHandler(stdout_handler)
 
-    parser = argparse.ArgumentParser(description='Generate final .csv dataset from intermediary .csv files')
+    parser = argparse.ArgumentParser(description='Generate final morfeus .csv dataset from intermediary .csv files')
     parser.add_argument("--data_dir", type=str, help="Directory where to search for .csv files", default='./')
 
     args = parser.parse_args()
