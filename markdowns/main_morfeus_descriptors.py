@@ -110,8 +110,8 @@ def extract_properties_compound(file_name, output_path, n_confs, solvent):
     # Calculate the descriptors of the ensemble
     descs = get_descriptors(ce)
 
-    os.makedirs(os.path.dirname(f"{output_path}/{file_name}_descriptors.csv"), exist_ok=True)
-    with open(f"{output_path}/{file_name}_descriptors.csv", "wb") as f:
+    os.makedirs(os.path.dirname(f"{output_path}/{file_name}.csv"), exist_ok=True)
+    with open(f"{output_path}/{file_name}.csv", "wb") as f:
         descs.to_frame(smiles).T.to_csv(f, index_label="smiles")
 
 
@@ -121,8 +121,10 @@ def compute_files(data_dir='./', output_path='jobs', n_confs=5, solvent=None):
     the same name. If only .smi files are found, they will be used by themselves.
     It will create .csv files with all results found
     """
+    # Change the wd to the subdirectory
+    os.chdir(data_dir)
     # Search each directory for .smi files
-    dirs = next(os.walk(data_dir))
+    dirs = next(os.walk('./'))
 
     # Base case, process the found files or do nothing if there is none and there are no more directories
 
@@ -151,9 +153,7 @@ def compute_files(data_dir='./', output_path='jobs', n_confs=5, solvent=None):
     if len(dirs[1]) > 0:
         prev_dir = os.getcwd()
         for d in dirs[1]:
-            # Change the wd to the subdirectory
-            os.chdir(f'{prev_dir}/{d}')
-            compute_files('./', output_path, n_confs, solvent)
+            compute_files(f'{prev_dir}/{d}', output_path, n_confs, solvent)
         os.chdir(prev_dir)
 
 
