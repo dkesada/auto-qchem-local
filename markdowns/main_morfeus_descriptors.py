@@ -8,6 +8,7 @@ from rdkit import Chem
 
 from morfeus_ml.morfeus_descriptors import *
 from morfeus import read_xyz
+from xtb.interface import XTBException
 
 
 logger = logging.getLogger(__name__)
@@ -135,19 +136,30 @@ def compute_files(data_dir='./', output_path='jobs', n_confs=5, solvent=None):
 
     for n in names:
         logger.info(f'Now processing file {n}')
-        try:
-            extract_properties_compound(n, output_path, n_confs, solvent)
-        except InvalidSmiles:
-            logger.warning(f'Could not convert molecule smiles from file {n}.smi')
-        except MismatchAtomNumber as e:
-            logger.warning(f'Number of atoms does not match in both .smi ({e.smi_n_atoms} atoms) and .xyz '
-                           f'({e.xyz_n_atoms}) files. Possible erroneous SMILE code')
-        except ValidationError as e:
-            logger.warning(f'Problems converting molecule with rdkit. Validation error: {e}')
-        except IndexError as e:
-            logger.warning(f'Possible problems with the .xyz file and conversion. Index error: {e}')
-        except Exception as e:
-            logger.warning(f'Unexpected exception: {e}')
+        tries = 0
+        while tries < 10:  # There can be single point calculation errors that require reruns
+            try:
+                extract_properties_compound(n, output_path, n_confs, solvent)
+                break
+            except InvalidSmiles:
+                logger.warning(f'Could not convert molecule smiles from file {n}.smi')
+                break
+            except MismatchAtomNumber as e:
+                logger.warning(f'Number of atoms does not match in both .smi ({e.smi_n_atoms} atoms) and .xyz '
+                               f'({e.xyz_n_atoms}) files. Possible erroneous SMILE code')
+                break
+            except ValidationError as e:
+                logger.warning(f'Problems converting molecule with rdkit. Validation error: {e}')
+                break
+            except IndexError as e:
+                logger.warning(f'Possible problems with the .xyz file and conversion. Index error: {e}')
+                break
+            except XTBException as e:
+                logger.warning(f'Single point calculation failed, retrying ({e})')
+                tries += 1
+            except Exception as e:
+                logger.warning(f'Unexpected exception: {e}')
+                break
 
     # Recursive case, further directories
     if len(dirs[1]) > 0:
