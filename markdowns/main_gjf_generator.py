@@ -52,8 +52,8 @@ def create_gjf_for_molecule(smiles, workdir='./output_gjf', workflow_type="custo
         logger.error(f"Timed out! Possible bad conformer Id for molecule {smiles}")
     except ValueError as e:
         logger.error(f"Bad conformer Id for molecule {smiles}. Error: {e}")
-    except Exception:
-        logger.error(f"Could not convert molecule {smiles}")
+    except Exception as e:
+        logger.error(f"Could not convert molecule {smiles}. Error: {e}")
 
 
 def export_to_gfj(smiles_file):
