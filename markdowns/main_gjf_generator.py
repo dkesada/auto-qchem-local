@@ -48,6 +48,9 @@ def create_gjf_for_molecule(smiles, workdir='./output_gjf', workflow_type="custo
         gig = gaussian_input_generator(m, workflow_type, workdir, theory, solvent, light_basis_set,
                                        heavy_basis_set, generic_basis_set, max_light_atomic_number)
         gig.create_gaussian_files()
+        with open(f'output_gjf/{m.inchikey}_conf_0.gjf.smi', "w") as f:
+            f.write(smiles)
+
     except func_timeout.FunctionTimedOut:
         logger.error(f"Timed out! Possible bad conformer Id for molecule {smiles}")
     except ValueError as e:
