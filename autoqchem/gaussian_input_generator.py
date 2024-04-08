@@ -1,6 +1,7 @@
 from autoqchem.helper_classes import *
-from autoqchem.helper_functions import *
 from autoqchem.rdkit_utils import *
+import logging
+
 
 logger = logging.getLogger(__name__)
 
