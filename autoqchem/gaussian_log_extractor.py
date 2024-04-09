@@ -146,19 +146,22 @@ class gaussian_log_extractor(object):
         """Split the log file into parts that correspond to gaussian tasks."""
 
         # regex logic: log parts start with a new line and " # " pattern
-        log_parts = re.split("\n\s-+\n\s#\s", self.log)[1:]
+        log_parts = re.split("\n\s-+\n\s#\s", self.log)[1:]  # TODO: possible ad-hoc behaviour
         self.parts = {}
         for p in log_parts:
             # regex logic: find first word in the text
-            name = re.search("^\w+", p).group(0).lower()
-            self.parts[name] = p
+            # name = re.search("^\w+", p).group(0).lower()
+            # self.parts[name] = p
+            names = re.search("^(\w|\s)+\s", p).group(0).lower().split(' ')[:-1]
+            for n in names:
+                self.parts[n] = p
 
     def _get_frequencies_and_moment_vectors(self) -> None:
         """Extract the vibrational modes and their moment vectors."""
 
         logger.debug("Extracting vibrational frequencies and moment vectors.")
         if 'freq' not in self.parts:
-            logger.info("Output file does not have a 'freq' part. Cannot extract frequencies.")
+            logger.debug("Output file does not have a 'freq' part. Cannot extract frequencies.")
             return
 
         try:
@@ -243,7 +246,7 @@ class gaussian_log_extractor(object):
                     pass
             if desc["name"] not in self.descriptors:
                 self.descriptors[desc["name"]] = None
-                logger.warning(f'''Descriptor {desc["name"]} not present in the log file.''')
+                logger.debug(f'''Descriptor {desc["name"]} not present in the log file.''')
 
         # stoichiometry
         self.descriptors['stoichiometry'] = re.search("Stoichiometry\s*(\w+)", text).group(1)
@@ -251,8 +254,10 @@ class gaussian_log_extractor(object):
         # convergence, regex-logic: last word in each line should be "YES"
         try:
             string = re.search("(Maximum Force.*?)\sPredicted change", text, re.DOTALL).group(1)
+            conv = list(map(lambda x: x[0], re.findall("(\w+)\s(\r\n|\r|\n)", string)))
+
             # compute the fraction of YES/NO answers
-            self.descriptors['converged'] = (np.array(re.findall("(\w+)\n", string)) == 'YES').mean()
+            self.descriptors['converged'] = (np.array(conv) == 'YES').mean()  # Before it was "(\w+)\n"
         except Exception:
             self.descriptors['converged'] = None
             logger.warning("Log file does not have optimization convergence information")
@@ -313,7 +318,7 @@ class gaussian_log_extractor(object):
                                columns=['NPA_charge', 'NPA_core', 'NPA_valence', 'NPA_Rydberg', 'NPA_total'])
         except Exception:
             npa = pd.DataFrame(['NPA_charge', 'NPA_core', 'NPA_valence', 'NPA_Rydberg', 'NPA_total'])
-            logger.warning(f"Log file does not contain NPA charges.")
+            logger.debug(f"Log file does not contain NPA charges.")
 
         # NMR
         try:
@@ -321,7 +326,7 @@ class gaussian_log_extractor(object):
             nmr = pd.DataFrame(np.array(string).astype(float), columns=['NMR_shift', 'NMR_anisotropy'])
         except Exception:
             nmr = pd.DataFrame(columns=['NMR_shift', 'NMR_anisotropy'])
-            logger.warning(f"Log file does not contain NMR shifts.")
+            logger.debug(f"Log file does not contain NMR shifts.")
 
         self.atom_freq_descriptors = pd.concat([mulliken, apt, npa, nmr], axis=1)
 
@@ -330,7 +335,7 @@ class gaussian_log_extractor(object):
 
         logger.debug("Extracting TD section descriptors")
         if 'td' not in self.parts:
-            logger.info("Output file does not have a 'TD' section. Cannot extract descriptors.")
+            logger.debug("Output file does not have a 'TD' section. Cannot extract descriptors.")
             return
 
         text = self.parts['td']
