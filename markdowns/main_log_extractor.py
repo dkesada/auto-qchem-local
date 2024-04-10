@@ -326,7 +326,7 @@ class gaussian_log_extractor(object):
         # convergence, regex-logic: last word in each line should be "YES"
         try:
             string = re.search("(Maximum Force.*?)\sPredicted change", text, re.DOTALL).group(1)
-            conv = list(map(lambda x: x[0], re.findall("(\w+)\s(\r\n|\r|\n)", string)))
+            conv = list(map(lambda x: x[0], re.findall("(\w+)\s?(\r\n|\r|\n)", string)))
 
             # compute the fraction of YES/NO answers
             self.descriptors['converged'] = (np.array(conv) == 'YES').mean()  # Before it was "(\w+)\n"
@@ -527,6 +527,8 @@ def filter_extractor_dict(dictionary):
         dictionary['atom_descriptors'].pop(0, None)
         dictionary['atom_descriptors'].pop('NMR_shift', None)
         dictionary['atom_descriptors'].pop('NMR_anisotropy', None)
+        dictionary['atom_descriptors'].pop('NPA_core', None)
+
     if dictionary['modes']:
         dictionary['modes'].pop('Frequencies', None)
         dictionary['modes'].pop('Red masses', None)
