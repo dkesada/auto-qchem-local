@@ -20,7 +20,7 @@ def join_csv_files(log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv
     df_morfeus = pd.read_csv(morfeus_dir)
 
     # Join them by the 'file_name' column
-    res = pd.merge(df_log, df_morfeus, on='file_name')
+    res = pd.merge(df_log, df_morfeus, on='file_name', how='outer')
 
     return res
 
