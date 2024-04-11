@@ -23,7 +23,8 @@ setup(
                       'xlrd>=2.0',
                       'openpyxl>=3.0',
                       'rdkit',
-                      'matplotlib>=3.5'
+                      'matplotlib>=3.5',
+                      'tqdm>=4.66.1'
                       ],
     python_requires='>=3.8'
 )
