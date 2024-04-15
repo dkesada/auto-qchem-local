@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 
-from gjf_generator import GjfGenerator
+from api.gjf_generator import GjfGenerator
+from api.morfeus_generator import MorfeusGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ class AutoChem:
 
     def __init__(self, log=None, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf', theory="B3LYP",
                  solvent="None", light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD", generic_basis_set="genecp",
-                 max_light_atomic_number=25):
+                 max_light_atomic_number=25, n_confs=5):
         """
         Initialize the AutoChem object with the defaults for each of the components
 
@@ -43,7 +44,14 @@ class AutoChem:
                                     generic_basis_set=generic_basis_set,
                                     max_light_atomic_number=max_light_atomic_number)
 
+        self.morf_gen = MorfeusGenerator(log=self.logger, n_confs=n_confs, solvent=solvent)
+
     def generate_gjf_files(self, smiles_file):
+        """Generate gjf files for all smiles inside the provided .smi file"""
+        pass
+
+    def compute_morfeus(self, dir):
+        """ Compute the morfeus descriptors for each .smi file found and save them as .csv files"""
         pass
 
     def compute_csv_files(self, data_dir='./'):

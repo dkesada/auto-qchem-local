@@ -1,7 +1,15 @@
+import os
 import logging
-from morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles
+from rdkit import Chem
+from morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
 
 logger = logging.getLogger(__name__)
+
+try:
+    from morfeus import read_xyz
+    from xtb.interface import XTBException
+except ImportError as e:
+    logger.warning(f'No version found for morfeus or xtb. Windows machines are not compatible. Exception: {e}')
 
 
 class MismatchAtomNumber(Exception):
@@ -13,13 +21,16 @@ class MismatchAtomNumber(Exception):
 
 
 class MorfeusGenerator:
-    def __init__(self, log=None):
+    def __init__(self, log=None, n_confs=5, solvent=None):
         if log:
             self.logger = log
         else:
             self.logger = logger
 
-    def extract_properties_compound(self, file_name, output_path, n_confs, solvent):
+        self.n_confs = n_confs
+        self.solvent = solvent
+
+    def extract_properties_compound(self, file_name, output_path):
         """
         Extract the morfeus properties of a .smi file, and additionally use a conformer in a .xyz file with the same name.
         The results are written into a .csv file.
@@ -48,10 +59,10 @@ class MorfeusGenerator:
             conf = Conformer(elements, coords)
 
             # Create the conformer ensemble
-            ce = compute_with_xyz(smiles, conf, n_confs=n_confs, solvent=solvent)
+            ce = compute_with_xyz(smiles, conf, n_confs=self.n_confs, solvent=self.solvent)
         except FileNotFoundError:
             self.logger.info(f'No .xyz file found for {file_name}. Computing only with .smi')
-            ce = compute(smiles, n_confs=n_confs, solvent=solvent)
+            ce = compute(smiles, n_confs=self.n_confs, solvent=self.solvent)
 
         # Calculate the descriptors of the ensemble
         descs = get_descriptors(ce)
