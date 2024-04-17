@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     logger.info('Started')
 
-    controller = AutoChem(log_to_file=False)
+    controller = AutoChem(log_to_file=True)
     controller.process_log_files(data_dir=args.data_dir, output_path=args.data_dir)
 
     logger.info('Finished')

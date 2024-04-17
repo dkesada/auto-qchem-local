@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 import sys
 import logging
 import numpy as np
@@ -64,8 +64,6 @@ class AutoChem:
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-
-
 
     @staticmethod
     def format_path(path):
