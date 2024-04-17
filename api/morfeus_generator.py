@@ -2,14 +2,14 @@ import os
 import logging
 from rdkit import Chem
 from morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
+from morfeus import read_xyz
 
 logger = logging.getLogger(__name__)
 
 try:
-    from morfeus import read_xyz
     from xtb.interface import XTBException
 except ImportError as e:
-    logger.warning(f'No version found for morfeus or xtb. Windows machines are not compatible. Exception: {e}')
+    logger.warning(f'No version found for xtb. Windows machines are not compatible. Exception: {e}')
 
 
 class MismatchAtomNumber(Exception):

@@ -1,5 +1,5 @@
 import os
-import argparse
+import datetime
 import sys
 import logging
 import numpy as np
@@ -8,6 +8,7 @@ import pandas as pd
 
 from api.gjf_generator import GjfGenerator
 from api.morfeus_generator import MorfeusGenerator
+from api.log_extractor import LogExtractor
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class AutoChem:
     Class that controls the available auto-qchem operators.
     """
 
-    def __init__(self, log=None, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf', theory="B3LYP",
+    def __init__(self, log=None, log_to_file=True, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf', theory="B3LYP",
                  solvent="None", light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD", generic_basis_set="genecp",
                  max_light_atomic_number=25, n_confs=5):
         """
@@ -45,6 +46,34 @@ class AutoChem:
                                     max_light_atomic_number=max_light_atomic_number)
 
         self.morf_gen = MorfeusGenerator(log=self.logger, n_confs=n_confs, solvent=solvent)
+
+        self.log_ext = LogExtractor(log=self.logger)
+
+        # Prepare the logger to output into both console and a file with the desired format
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(logging.DEBUG)
+        stdout_handler.setFormatter(formatter)
+        logger.addHandler(stdout_handler)
+
+        if log_to_file:
+            date = datetime.now()
+            file_handler = logging.FileHandler(filename=date.strftime('api_%d_%m_%Y_%H_%M.log'), mode='a')
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+
+
+    @staticmethod
+    def format_path(path):
+        """ Make sure that the path ends with a '/' symbol """
+        if path[-1] != '/':
+            path = path + '/'
+
+        return path
 
     def generate_gjf_files(self, smiles_file):
         """Generate gjf files for all smiles inside the provided .smi file"""
@@ -90,6 +119,61 @@ class AutoChem:
             os.chdir(prev_dir)
 
         return res
+
+    def rec_compute_log_files(self, data_dir='./'):
+        """
+        Recursive function that processes each .log file found in a directory and its subdirectories. It will convert
+        all .log files found into a single pandas dataframe
+        :param data_dir: the directory where to perform the search and processing of .log files
+        :return: the processed .log files inside a pandas dataframe
+        """
+        # Search each directory for .log files
+        os.chdir(data_dir)
+        dirs = next(os.walk('./'))
+
+        # Base case, process the found files or do nothing if there is none and there are no more directories
+        res = pd.DataFrame()
+
+        # Get the .log files in this folder
+        names = np.array(dirs[2])
+        names = names[list(map(lambda x: x.endswith('.log'), names))]
+        names = list(map(lambda x: x[:-4], names))
+
+        for n in names:
+            logger.info(f'Now processing file {n}')
+            try:
+                df = self.log_ext.export_to_pandas(f'{data_dir}/{n}.log')
+                df.insert(0, 'file_name', n)  # Insert the file name for joining with morfeus output later
+                if len(df.columns) > len(res.columns):
+                    res = pd.concat([df, res], axis=0)
+                else:
+                    res = pd.concat([res, df], axis=0)
+            except AttributeError as e:
+                logging.warning(f'Possible problem processing the log file: {e}')
+
+        # Recursive case, further directories
+        if len(dirs[1]) > 0:
+            prev_dir = os.getcwd()
+            for d in dirs[1]:
+                # Change the wd to the subdirectory
+                res_rec = self.rec_compute_log_files(f'{prev_dir}/{d}')
+                if len(res_rec.columns) > len(res.columns):
+                    res = pd.concat([res_rec, res], axis=0)
+                else:
+                    res = pd.concat([res, res_rec], axis=0)
+
+            os.chdir(prev_dir)
+
+        return res
+
+    def process_log_files(self, data_dir='./', output_path='./'):
+        logger.info('Started .log processing')
+
+        res = self.rec_compute_log_files(data_dir=data_dir)
+        res.reset_index(drop=True, inplace=True)
+        res.to_csv(f'{self.format_path(output_path)}log_values.csv', index=False)
+
+        logger.info('Finished .log processing')
 
     def join_csv_files(self, log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv'):
         """
