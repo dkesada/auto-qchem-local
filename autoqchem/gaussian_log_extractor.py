@@ -152,7 +152,7 @@ class gaussian_log_extractor(object):
             # regex logic: find first word in the text
             # name = re.search("^\w+", p).group(0).lower()
             # self.parts[name] = p
-            names = re.search("^(\w|\s)+\s", p).group(0).lower().split(' ')[:-1]
+            names = re.search("^(\w|\s)+(\s|=)", p).group(0).lower().replace('=', ' ').split(' ')[:-1]
             for n in names:
                 self.parts[n] = p
 
@@ -254,7 +254,7 @@ class gaussian_log_extractor(object):
         # convergence, regex-logic: last word in each line should be "YES"
         try:
             string = re.search("(Maximum Force.*?)\sPredicted change", text, re.DOTALL).group(1)
-            conv = list(map(lambda x: x[0], re.findall("(\w+)\s(\r\n|\r|\n)", string)))
+            conv = list(map(lambda x: x[0], re.findall("(\w+)\s?(\r\n|\r|\n)", string)))
 
             # compute the fraction of YES/NO answers
             self.descriptors['converged'] = (np.array(conv) == 'YES').mean()  # Before it was "(\w+)\n"

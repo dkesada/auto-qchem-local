@@ -149,7 +149,7 @@ class AutoChem:
                 else:
                     res = pd.concat([res, df], axis=0)
             except AttributeError as e:
-                logging.warning(f'Possible problem processing the log file: {e}')
+                logger.warning(f'Possible problem processing the log file: {e}')
 
         # Recursive case, further directories
         if len(dirs[1]) > 0:
