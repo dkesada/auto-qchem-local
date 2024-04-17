@@ -4,6 +4,7 @@ import sys
 import logging
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 
 from api.gjf_generator import GjfGenerator
@@ -74,8 +75,13 @@ class AutoChem:
         return path
 
     def generate_gjf_files(self, smiles_file):
-        """Generate gjf files for all smiles inside the provided .smi file"""
-        pass
+        """ Load all SMILES in the smiles_file file and creates a .gjf for each one of them """
+        f = open(smiles_file, 'r')
+        smiles = f.readlines()
+        f.close()
+
+        for s in tqdm(smiles):
+            self.gjf_gen.create_gjf_for_molecule(s)
 
     def compute_morfeus(self, dir):
         """ Compute the morfeus descriptors for each .smi file found and save them as .csv files"""

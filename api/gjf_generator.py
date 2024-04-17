@@ -3,7 +3,6 @@ from autoqchem.molecule import molecule
 from autoqchem.gaussian_input_generator import gaussian_input_generator
 import func_timeout
 import logging
-from tqdm import tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,6 @@ class GjfGenerator:
             self.logger = log
         else:
             self.logger = logger
-        self.logger = logger
         self.conv_timeout = conv_timeout
         self.workflow_type = workflow_type
         self.workdir_gjf = workdir_gjf
@@ -37,6 +35,7 @@ class GjfGenerator:
 
         # create Gaussian files
         try:
+            self.logger.info(f'Now processing SMILES {smiles}')
             m = func_timeout.func_timeout(self.conv_timeout, lambda: molecule(smiles, num_conf=1))
             simplified_name = ''.join(e for e in smiles if e.isalnum())
             molecule_workdir = os.path.join(f"{self.workdir_gjf}", simplified_name)
@@ -48,17 +47,8 @@ class GjfGenerator:
                 f.write(smiles)
 
         except func_timeout.FunctionTimedOut:
-            logger.error(f"Timed out! Possible bad conformer Id for molecule {smiles}")
+            self.logger.error(f"Timed out! Possible bad conformer Id for molecule {smiles}")
         except ValueError as e:
-            logger.error(f"Bad conformer Id for molecule {smiles}. Error: {e}")
+            self.logger.error(f"Bad conformer Id for molecule {smiles}. Error: {e}")
         except Exception as e:
-            logger.error(f"Could not convert molecule {smiles}. Error: {e}")
-
-    def export_to_gfj(self, smiles_file):
-        """ Loads SMILES in the ./smiles.smi file and creates a .gjf for each one of them """
-        f = open(smiles_file, 'r')
-        smiles = f.readlines()
-        f.close()
-
-        for s in tqdm(smiles):
-            self.create_gjf_for_molecule(s)
+            self.logger.error(f"Could not convert molecule {smiles}. Error: {e}")
