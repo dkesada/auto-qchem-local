@@ -67,7 +67,7 @@ class AutoChem:
             logger.addHandler(file_handler)
 
     @staticmethod
-    def format_path(path):
+    def _format_path(path):
         """ Make sure that the path ends with a '/' symbol """
         if path[-1] != '/':
             path = path + '/'
@@ -75,7 +75,11 @@ class AutoChem:
         return path
 
     def generate_gjf_files(self, smiles_file):
-        """ Load all SMILES in the smiles_file file and creates a .gjf for each one of them """
+        """
+        Entry point for the generation of gjf files.
+        This function loads all SMILES in the smiles_file file and creates a .gjf and .smi files with the same names
+        for each one of them inside the workdir_gjf folder provided when creating the api object.
+        """
         f = open(smiles_file, 'r')
         smiles = f.readlines()
         f.close()
@@ -89,6 +93,7 @@ class AutoChem:
 
     def compute_csv_files(self, data_dir='./'):
         """
+        Entry point that joins all morfeus .csv files found inside data_dir into a single .csv file.
         Recursive function that join the morfeus properties inside separate .csv files into a single one.
         This should only be run when no other .csv files can be found in the folder and subdirectories
         :param data_dir: path to the working directory
@@ -124,7 +129,7 @@ class AutoChem:
 
         return res
 
-    def rec_compute_log_files(self, data_dir='./'):
+    def _rec_compute_log_files(self, data_dir='./'):
         """
         Recursive function that processes each .log file found in a directory and its subdirectories. It will convert
         all .log files found into a single pandas dataframe
@@ -160,7 +165,7 @@ class AutoChem:
             prev_dir = os.getcwd()
             for d in dirs[1]:
                 # Change the wd to the subdirectory
-                res_rec = self.rec_compute_log_files(f'{prev_dir}/{d}')
+                res_rec = self._rec_compute_log_files(f'{prev_dir}/{d}')
                 if len(res_rec.columns) > len(res.columns):
                     res = pd.concat([res_rec, res], axis=0)
                 else:
@@ -171,15 +176,20 @@ class AutoChem:
         return res
 
     def process_log_files(self, data_dir='./', output_path='./'):
+        """
+        Entry point for processing all .log files found inside a directory and its subdirectories.
+        This function will process all .log files found in data_dir and compile the extracted information
+        into a .csv file saved to output_path as log_values.csv
+        """
         logger.info('Started .log processing')
 
-        res = self.rec_compute_log_files(data_dir=data_dir)
+        res = self._rec_compute_log_files(data_dir=data_dir)
         res.reset_index(drop=True, inplace=True)
-        res.to_csv(f'{self.format_path(output_path)}log_values.csv', index=False)
+        res.to_csv(f'{self._format_path(output_path)}log_values.csv', index=False)
 
         logger.info('Finished .log processing')
 
-    def join_csv_files(self, log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv'):
+    def _join_csv_files(self, log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv'):
         """
         Function that joins the log extracted properties and the morfeus properties inside separate .csv files into a single
         one. They will be joined by the file_name column, which contains the original names of the .log and .smi files.
