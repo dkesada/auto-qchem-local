@@ -5,6 +5,7 @@ setup(
     version='2.0.0dev',
     packages=['autoqchem', 'morfeus_ml', 'api'],
     url='https://github.com/dkesada/auto-qchem_exp',
+    exclude_package_data={'': ['media']},
     license='GPL',
     author='Andrzej Zuranski, Benjamin Shields, Jason Wang, Winston Gee, David Quesada',
     description='auto-qchem local version',
