@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/beef-broccoli/misc-files/blob/9332ec68f7f798a3c2819dad9a0d2280769985ee/autoqchem.png" alt="logo" width="600">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/simple/media/autoqchem.png" alt="logo" width="600">
 </p>
 
 ## Quick links
