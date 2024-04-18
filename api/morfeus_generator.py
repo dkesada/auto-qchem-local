@@ -6,11 +6,6 @@ from morfeus import read_xyz
 
 logger = logging.getLogger(__name__)
 
-try:
-    from xtb.interface import XTBException
-except ImportError as e:
-    logger.warning(f'No version found for xtb. Windows machines are not compatible. Exception: {e}')
-
 
 class MismatchAtomNumber(Exception):
     """ Raised when the number of atoms in a SMILES code does not match the number of atoms in a .xyz file"""

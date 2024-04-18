@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='auto-qchem-local',
-    version='1.3.3dev',
+    version='2.0.0dev',
     packages=['autoqchem', 'morfeus_ml', 'api'],
     url='https://github.com/dkesada/auto-qchem_exp',
     license='GPL',
