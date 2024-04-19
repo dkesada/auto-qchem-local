@@ -28,7 +28,7 @@ setup(
                       'tqdm>=4.66.1',
                       'func-timeout>=4.3.5',
                       'morfeus-ml>=0.7.2',
-                      'openbabel',
+                      'openbabel==3.1.1',
                       ],
     python_requires='>=3.8'
 )
