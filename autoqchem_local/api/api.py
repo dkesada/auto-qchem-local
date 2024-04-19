@@ -55,7 +55,7 @@ class AutoChem:
     """
 
     def __init__(self, log=None, log_to_file=True, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf',
-                 theory="B3LYP", solvent="None", light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD",
+                 theory="B3LYP", solvent=None, light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD",
                  generic_basis_set="genecp", max_light_atomic_number=25, n_confs=5):
         """
         Initialize the AutoChem object with the defaults for each of the components
