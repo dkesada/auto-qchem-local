@@ -179,7 +179,9 @@ class AutoChem:
         :param data_dir: the path to the directory where to perform the search and processing of .smi files
         :param output_path: the folder to be created in each subdirectory with the processed .csv files
         """
+        prev_dir = os.getcwd()
         self._rec_compute_morfeus(data_dir=data_dir, output_path=output_path)
+        os.chdir(prev_dir)
 
     def _rec_join_morfeus_csv_files(self, data_dir='./'):
         """
@@ -222,9 +224,11 @@ class AutoChem:
         """
         Entry point for joining the morfeus properties of all molecules from different .csv files into a single one
         """
+        prev_dir = os.getcwd()
         res = self._rec_join_morfeus_csv_files(data_dir=data_dir)
         res.reset_index(drop=True, inplace=True)
         res.to_csv('morfeus_values.csv', index=False)
+        os.chdir(prev_dir)
 
     def _rec_compute_log_files(self, data_dir='./'):
         """
@@ -280,9 +284,11 @@ class AutoChem:
         """
         self.logger.info('Started .log processing')
 
+        prev_dir = os.getcwd()
         res = self._rec_compute_log_files(data_dir=data_dir)
         res.reset_index(drop=True, inplace=True)
         res.to_csv(f'{self._format_path(output_path)}log_values.csv', index=False)
+        os.chdir(prev_dir)
 
         self.logger.info('Finished .log processing')
 
