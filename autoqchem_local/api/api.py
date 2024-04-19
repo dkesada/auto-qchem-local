@@ -205,8 +205,11 @@ class AutoChem:
         for n in names:
             self.logger.info(f'Now processing file {n}')
             df = pd.read_csv(f'{n}.csv')
-            df.insert(0, 'file_name', n)  # Insert the file name for joining with log output later
-            res = pd.concat([res, df], axis=0)
+            if df.columns[0] != 'smiles':  # A .csv that is not a morfeus output
+                self.logger.warning(f'File {n}.csv does not begin with a SMILES column, ignoring possible non-morfeus .csv')
+            else:
+                df.insert(0, 'file_name', n)  # Insert the file name for joining with log output later
+                res = pd.concat([res, df], axis=0)
 
         # Recursive case, further directories
         if len(dirs[1]) > 0:
@@ -252,7 +255,7 @@ class AutoChem:
         for n in names:
             self.logger.info(f'Now processing file {n}')
             try:
-                df = self.log_ext.export_to_pandas(f'{data_dir}/{n}.log')
+                df = self.log_ext.export_to_pandas(f'{n}.log')
                 df.insert(0, 'file_name', n)  # Insert the file name for joining with morfeus output later
                 if len(df.columns) > len(res.columns):
                     res = pd.concat([df, res], axis=0)
@@ -286,9 +289,9 @@ class AutoChem:
 
         prev_dir = os.getcwd()
         res = self._rec_compute_log_files(data_dir=data_dir)
+        os.chdir(prev_dir)
         res.reset_index(drop=True, inplace=True)
         res.to_csv(f'{self._format_path(output_path)}log_values.csv', index=False)
-        os.chdir(prev_dir)
 
         self.logger.info('Finished .log processing')
 
