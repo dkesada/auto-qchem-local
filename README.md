@@ -24,6 +24,8 @@ Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, 
 
 ### Usage examples
 
+In the [markdowns](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns) folder there are some examples on how to use the package as a script tool with `argparse`. The [main_api.py](https://github.com/dkesada/auto-qchem_exp/blob/master/markdowns/main_api.py) shows how to use the `AutoChem` class as the main entry point to the api of the package. 
+
 In the future I'll add some examples on how to use this package locally. It is simplified enough so that in a few function calls one can have a full dataset with the descriptors of the desired molecules.
 
 
