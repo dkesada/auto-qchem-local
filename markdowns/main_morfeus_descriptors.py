@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from rdkit import Chem
 
-from morfeus_ml.morfeus_descriptors import *
+from autoqchem_local.morfeus_ml.morfeus_descriptors import *
 from morfeus import read_xyz
 from xtb.interface import XTBException
 

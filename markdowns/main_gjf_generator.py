@@ -6,8 +6,8 @@ import sys
 from tqdm import tqdm
 import func_timeout
 
-from autoqchem.molecule import molecule
-from autoqchem.gaussian_input_generator import *
+from autoqchem_local.autoqchem.molecule import molecule
+from autoqchem_local.autoqchem.gaussian_input_generator import *
 
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')

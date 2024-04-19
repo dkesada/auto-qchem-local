@@ -1,8 +1,6 @@
-import os
 import argparse
 import sys
 import logging
-import numpy as np
 import pandas as pd
 
 
@@ -11,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def join_csv_files(log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv'):
     """
-    Function that join the log extracted properties and the morfeus properties inside separate .csv files into a single
+    Function that joins the log extracted properties and the morfeus properties inside separate .csv files into a single
     one. They will be joined by the file_name column, which contains the original names of the .log and .smi files.
     Both of these should have the same name for this join to work.
     """
@@ -23,7 +21,6 @@ def join_csv_files(log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv
     res = pd.merge(df_log, df_morfeus, on='file_name', how='outer')
 
     return res
-
 
 
 if __name__ == "__main__":
