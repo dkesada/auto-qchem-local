@@ -1,6 +1,6 @@
 import re
 
-from autoqchem.descriptor_functions import *
+from autoqchem_local.autoqchem.descriptor_functions import *
 
 logger = logging.getLogger(__name__)
 float_or_int_regex = "[-+]?[0-9]*\.[0-9]+|[0-9]+"
@@ -9,12 +9,17 @@ float_or_int_regex = "[-+]?[0-9]*\.[0-9]+|[0-9]+"
 class gaussian_log_extractor(object):
     """"""
 
-    def __init__(self, log_file_path):
+    def __init__(self, log_file_path, log=None):
         """Initialize the log extractor. Extract molecule geometry and atom labels.
 
         :param log_file_path: local path of the log file
         :type log_file_path: str
         """
+
+        if log:
+            self.logger = log
+        else:
+            self.logger = logger
 
         with open(log_file_path) as f:
             self.log = f.read()
@@ -47,10 +52,10 @@ class gaussian_log_extractor(object):
             self._get_frequencies_and_moment_vectors()  # fetch vibration table and vectors
             freqs = [*map(float, self.modes['Frequencies'])]  # extract frequencies
             if [*filter(lambda x: x < 0., freqs)]:  # check for negative frequencies
-                print(self.log_file_path)
+                self.logger.error(f'Negative frequencies found for file {self.log_file_path}')
                 raise NegativeFrequencyException()
         except TypeError:  # no frequencies
-            print(self.log_file_path)
+            self.logger.error(f'No frequencies found for file {self.log_file_path}')
             raise OptimizationIncompleteException()
 
     def get_descriptors(self) -> dict:
@@ -79,7 +84,7 @@ class gaussian_log_extractor(object):
         """Extract all descriptor presets: buried volumes, vibrational modes, freq part descriptors and \
         and td part descriptors"""
 
-        logger.debug(f"Extracting descriptors.")
+        self.logger.debug(f"Extracting descriptors.")
         self.get_atom_labels()  # atom labels
         self.get_geometry()  # geometry
         self._compute_occupied_volumes()  # compute buried volumes
@@ -138,7 +143,7 @@ class gaussian_log_extractor(object):
     def _compute_occupied_volumes(self, radius=3) -> None:
         """Calculate occupied volumes for each atom in the molecule."""
 
-        logger.debug(f"Computing buried volumes within radius: {radius} Angstroms.")
+        self.logger.debug(f"Computing buried volumes within radius: {radius} Angstroms.")
         self.vbur = pd.Series(self.geom.index.map(lambda i: occupied_volume(self.geom, i, radius)),
                               name='VBur')
 
@@ -159,9 +164,9 @@ class gaussian_log_extractor(object):
     def _get_frequencies_and_moment_vectors(self) -> None:
         """Extract the vibrational modes and their moment vectors."""
 
-        logger.debug("Extracting vibrational frequencies and moment vectors.")
+        self.logger.debug("Extracting vibrational frequencies and moment vectors.")
         if 'freq' not in self.parts:
-            logger.debug("Output file does not have a 'freq' part. Cannot extract frequencies.")
+            self.logger.debug("Output file does not have a 'freq' part. Cannot extract frequencies.")
             return
 
         try:
@@ -202,14 +207,14 @@ class gaussian_log_extractor(object):
         except Exception:
             self.modes = None
             self.mode_vectors = None
-            logger.warning("Log file does not contain vibrational frequencies")
+            self.logger.warning("Log file does not contain vibrational frequencies")
 
     def _get_freq_part_descriptors(self) -> None:
         """Extract descriptors from frequency part."""
 
-        logger.debug("Extracting frequency section descriptors")
+        self.logger.debug("Extracting frequency section descriptors")
         if 'freq' not in self.parts:
-            logger.info("Output file does not have a 'freq' section. Cannot extract descriptors.")
+            self.logger.info("Output file does not have a 'freq' section. Cannot extract descriptors.")
             return
 
         text = self.parts['freq']
@@ -246,7 +251,7 @@ class gaussian_log_extractor(object):
                     pass
             if desc["name"] not in self.descriptors:
                 self.descriptors[desc["name"]] = None
-                logger.debug(f'''Descriptor {desc["name"]} not present in the log file.''')
+                self.logger.debug(f'''Descriptor {desc["name"]} not present in the log file.''')
 
         # stoichiometry
         self.descriptors['stoichiometry'] = re.search("Stoichiometry\s*(\w+)", text).group(1)
@@ -260,7 +265,7 @@ class gaussian_log_extractor(object):
             self.descriptors['converged'] = (np.array(conv) == 'YES').mean()  # Before it was "(\w+)\n"
         except Exception:
             self.descriptors['converged'] = None
-            logger.warning("Log file does not have optimization convergence information")
+            self.logger.warning("Log file does not have optimization convergence information")
 
         # energies, regex-logic: find all floats in energy block, split by occupied, virtual orbitals
         string = re.search("Population.*?SCF [Dd]ensity.*?(\sAlph.*?)\n\s*Condensed", text, re.DOTALL).group(1)
@@ -278,7 +283,7 @@ class gaussian_log_extractor(object):
             homo_beta, lumo_beta = max(occupied_energies_beta), min(unoccupied_energies_beta)
             homo, lumo = homo_alpha, lumo_beta
         else:
-            logger.warning(f"Unsupported multiplicity {self.descriptors['multiplicity']}, cannot compute homo/lumo. "
+            self.logger.warning(f"Unsupported multiplicity {self.descriptors['multiplicity']}, cannot compute homo/lumo. "
                            f"Setting both to 0.")
             homo, lumo = 0, 0
         self.descriptors['homo_energy'] = homo
@@ -307,7 +312,7 @@ class gaussian_log_extractor(object):
                 apt = pd.Series(charges, name='APT_charge')
             except Exception:
                 apt = pd.Series(name='APT_charge')
-                logger.warning(f"Log file does not contain APT charges.")
+                self.logger.warning(f"Log file does not contain APT charges.")
 
         # NPA charges
         try:
@@ -318,7 +323,7 @@ class gaussian_log_extractor(object):
                                columns=['NPA_charge', 'NPA_core', 'NPA_valence', 'NPA_Rydberg', 'NPA_total'])
         except Exception:
             npa = pd.DataFrame(['NPA_charge', 'NPA_core', 'NPA_valence', 'NPA_Rydberg', 'NPA_total'])
-            logger.debug(f"Log file does not contain NPA charges.")
+            self.logger.debug(f"Log file does not contain NPA charges.")
 
         # NMR
         try:
@@ -326,16 +331,16 @@ class gaussian_log_extractor(object):
             nmr = pd.DataFrame(np.array(string).astype(float), columns=['NMR_shift', 'NMR_anisotropy'])
         except Exception:
             nmr = pd.DataFrame(columns=['NMR_shift', 'NMR_anisotropy'])
-            logger.debug(f"Log file does not contain NMR shifts.")
+            self.logger.debug(f"Log file does not contain NMR shifts.")
 
         self.atom_freq_descriptors = pd.concat([mulliken, apt, npa, nmr], axis=1)
 
     def _get_td_part_descriptors(self) -> None:
         """Extract descriptors from TD part."""
 
-        logger.debug("Extracting TD section descriptors")
+        self.logger.debug("Extracting TD section descriptors")
         if 'td' not in self.parts:
-            logger.debug("Output file does not have a 'TD' section. Cannot extract descriptors.")
+            self.logger.debug("Output file does not have a 'TD' section. Cannot extract descriptors.")
             return
 
         text = self.parts['td']

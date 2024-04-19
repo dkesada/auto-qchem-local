@@ -14,8 +14,8 @@ except ImportError:
 
 from rdkit.Chem import Descriptors
 
-from autoqchem.openbabel_utils import *
-from autoqchem.rdkit_utils import *
+from autoqchem_local.autoqchem.openbabel_utils import *
+from autoqchem_local.autoqchem.rdkit_utils import *
 
 logger = logging.getLogger(__name__)
 

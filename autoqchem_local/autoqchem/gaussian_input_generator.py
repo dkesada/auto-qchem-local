@@ -1,5 +1,5 @@
-from autoqchem.helper_classes import *
-from autoqchem.rdkit_utils import *
+from autoqchem_local.autoqchem.helper_classes import *
+from autoqchem_local.autoqchem.rdkit_utils import *
 import logging
 
 

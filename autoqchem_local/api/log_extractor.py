@@ -1,14 +1,7 @@
 import logging
-import re
-import os
-import sys
 import pandas as pd
-import numpy as np
-from tqdm import tqdm
-from scipy.spatial.distance import cdist
 
-from autoqchem.descriptor_functions import occupied_volume
-from autoqchem.gaussian_log_extractor import gaussian_log_extractor, NegativeFrequencyException, NoGeometryException, OptimizationIncompleteException
+from autoqchem_local.autoqchem.gaussian_log_extractor import gaussian_log_extractor
 
 try:
     from openbabel import pybel  # openbabel 3.0.0
@@ -117,7 +110,7 @@ class LogExtractor:
         :param log_path: the path to the .log file
         :return: a pandas dataframe with the extracted info from the .log file
         """
-        extractor = gaussian_log_extractor(log_path)
+        extractor = gaussian_log_extractor(log_path, self.logger)
         desc = extractor.get_descriptors()
         self.filter_extractor_dict(desc)
         df = self.dict_csv_conversor(desc)

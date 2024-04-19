@@ -1,6 +1,6 @@
 import os
-from autoqchem.molecule import molecule
-from autoqchem.gaussian_input_generator import gaussian_input_generator
+from autoqchem_local.autoqchem.molecule import molecule
+from autoqchem_local.autoqchem.gaussian_input_generator import gaussian_input_generator
 import func_timeout
 import logging
 

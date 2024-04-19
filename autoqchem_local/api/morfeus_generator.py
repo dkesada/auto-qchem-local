@@ -1,7 +1,7 @@
 import os
 import logging
 from rdkit import Chem
-from morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
+from autoqchem_local.morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
 from morfeus import read_xyz
 
 logger = logging.getLogger(__name__)

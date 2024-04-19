@@ -5,7 +5,7 @@ import itertools
 from rdkit import Chem, Geometry
 from rdkit.Chem import AllChem
 
-from autoqchem.molecule import GetSymbol
+from autoqchem_local.autoqchem.molecule import GetSymbol
 
 
 def extract_from_rdmol(mol: Chem.Mol) -> tuple:

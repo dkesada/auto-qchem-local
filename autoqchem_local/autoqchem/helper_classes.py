@@ -4,12 +4,6 @@ config = {
         'atoms_per_processor': 6,
         'max_processors': 20,
         'ram_per_processor': 2,
-    },
-    'mongoDB':{
-        'host': "autoqchem.org",
-        'port': 27017,
-        'user': "acqWriter",
-        'password': "dftworks",
     }
 }
 

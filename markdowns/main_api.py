@@ -3,7 +3,7 @@ import logging
 import argparse
 import datetime
 
-from api.api import AutoChem
+from autoqchem_local.api.api import AutoChem
 
 logger = logging.getLogger(__name__)
 

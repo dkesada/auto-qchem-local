@@ -7,10 +7,10 @@ import pandas as pd
 from tqdm import tqdm
 
 
-from api.gjf_generator import GjfGenerator
-from api.morfeus_generator import MorfeusGenerator, MismatchAtomNumber
-from api.log_extractor import LogExtractor
-from morfeus_ml.morfeus_descriptors import InvalidSmiles
+from autoqchem_local.api.gjf_generator import GjfGenerator
+from autoqchem_local.api.morfeus_generator import MorfeusGenerator, MismatchAtomNumber
+from autoqchem_local.api.log_extractor import LogExtractor
+from autoqchem_local.morfeus_ml.morfeus_descriptors import InvalidSmiles
 
 logger = logging.getLogger(__name__)
 

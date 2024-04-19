@@ -23,7 +23,6 @@ def join_csv_files(log_dir='./log_values.csv', morfeus_dir='./morfeus_values.csv
     return res
 
 
-
 if __name__ == "__main__":
     # Prepare the logger to output into both console and a file with the desired format
     logger.setLevel(logging.INFO)

@@ -10,8 +10,8 @@ from rdkit import Chem
 from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
 from morfeus.data import atomic_symbols, atomic_numbers
-from morfeus_ml.data import metals
-from morfeus_ml.geometry import get_closest_atom_to_metal, get_central_carbon
+from autoqchem_local.morfeus_ml.data import metals
+from autoqchem_local.morfeus_ml.geometry import get_closest_atom_to_metal, get_central_carbon
 
 import openbabel.pybel as pybel
 from openbabel.openbabel import OBMol

@@ -1,5 +1,5 @@
-from autoqchem.helper_classes import *
-from autoqchem.molecule import pybel, GetSymbol
+from autoqchem_local.autoqchem.helper_classes import *
+from autoqchem_local.autoqchem.molecule import pybel, GetSymbol
 
 conv = pybel.ob.OBConversion()
 

@@ -2,10 +2,10 @@ from setuptools import setup
 
 setup(
     name='auto-qchem-local',
-    version='2.0.0dev',
-    packages=['autoqchem', 'morfeus_ml', 'api'],
+    version='2.0.1dev',
+    packages=['autoqchem_local'],
     url='https://github.com/dkesada/auto-qchem_exp',
-    exclude_package_data={'': ['media']},
+    exclude_package_data={'': ['media', 'markdowns']},
     license='GPL',
     author='Andrzej Zuranski, Benjamin Shields, Jason Wang, Winston Gee, David Quesada',
     description='auto-qchem local version',
@@ -25,7 +25,11 @@ setup(
                       'openpyxl>=3.0',
                       'rdkit',
                       'matplotlib>=3.5',
-                      'tqdm>=4.66.1'
+                      'tqdm>=4.66.1',
+                      'func-timeout>=4.3.5',
+                      'morfeus-ml>=0.7.2',
+                      'openbabel>=3.1.1',
+
                       ],
     python_requires='>=3.8'
 )

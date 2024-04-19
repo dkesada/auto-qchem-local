@@ -16,7 +16,9 @@ The idea of this fork is to provide the possibility to perform their own calcula
 
 You will need to install this autoq-chem version from GitHub with the following command:
 
-(put the command here)
+```
+pip install git+https://github.com/dkesada/auto-qchem_exp.git@simple
+```
 
 Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, but I haven't tried it) machines, because they need the xtb handler for Python, and that is only available in Linux. This will not work on Windows.
 

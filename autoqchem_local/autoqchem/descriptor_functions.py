@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 
-from autoqchem.molecule import GetVdwRad
+from autoqchem_local.autoqchem.molecule import GetVdwRad
 
 logger = logging.getLogger(__name__)
 
