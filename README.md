@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/dkesada/auto-qchem_exp/blob/simple/media/autoqchem.png" alt="logo" width="600">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/autoqchem.png" alt="logo" width="600">
 </p>
 
 ## Introduction
@@ -37,7 +37,7 @@ As for a full example, we have prepared some files and folders to showcase how t
 Let's start with the generation of .gjf files. For this, the only thing we require is a single .smi file with a SMILES code per line for each of the compounds we want to analyze with Gaussian. An example .smi file is stored [here](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns/example/input_gaussian_files). In this case, we would have a folder like this:
 
 <p align="center">
-  <img src="https://github.com/dkesada/auto-qchem_exp/blob/simple/media/gjf_1.png" alt="gjf_1" width="600">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/gjf_1.png" alt="gjf_1" width="600">
 </p>
 
 Then, we only need to use the `AutoChem` class to generate the .gjf files from this .smi file:
@@ -52,7 +52,7 @@ controller.generate_gjf_files(path_to_smi_file)
 This will generate a separate .gjf and .smi file for each SMILES in the original .smi file inside a new ./output_gjf/ directory:
 
 <p align="center">
-  <img src="https://github.com/dkesada/auto-qchem_exp/blob/simple/media/gjf_1.png" alt="gjf_1" width="600">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/gjf_2.png" alt="gjf_1" width="600">
 </p>
 
 Additionally, if the `log_to_file` parameter is set to `True`, a log file will be generated with all relevant execution information of the controller object.
