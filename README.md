@@ -42,10 +42,12 @@ Let's start with the generation of .gjf files. For this, the only thing we requi
 
 Then, we only need to use the `AutoChem` class to generate the .gjf files from this .smi file:
 
-```{python}
+```python
 from autoqchem_local.api.api import AutoChem
 
+# Instantiate the AutoChem object
 controller = AutoChem(log_to_file=True)
+
 controller.generate_gjf_files(path_to_smi_file)
 ```
 
@@ -55,12 +57,89 @@ This will generate a separate .gjf and .smi file for each SMILES in the original
   <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/gjf_2.png" alt="gjf_1" width="600">
 </p>
 
-Additionally, if the `log_to_file` parameter is set to `True`, a log file will be generated with all relevant execution information of the controller object.
+This generated .gjf files will be named after the InChI code of each molecule, because SMILES codes have characters that cannot be in file names. This files can now be inputed into Gaussian for calculation. The other .smi files with the same names as the .gjf files contain the SMILES code of each molecule and will be needed for the morfeus calculation part. Additionally, if the `log_to_file` parameter is set to `True`, a log file will be generated with all relevant execution information of the controller object. 
 
 #### Full dataset generation
 
-#### 
+The dataset generation can be done all in one single function call or each part can be done individually. To begin this process, we need all .smi files and .log files if available in the same folder and with the same names. Additionally, a .xyz file with the coordinates of a conformer can also be present for each molecule. All files for the same molecule need to have the same name so that they can be joined in the same row in the final dataset. 
 
-In the future I'll add some examples on how to use this package locally. It is simplified enough so that in a few function calls one can have a full dataset with the descriptors of the desired molecules.
+To run the full pipeline in one call, we use the following code:
+
+```python
+controller.generate_dataset(data_dir=path_to_folder, gaussian=True)
+```
+
+This generates intermediate files and eventually returns the full_dataset.csv file with all information of both the .log files if available and the morfeus properties of the molecules
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/full.png" alt="full" width="600">
+</p>
+
+All intermediate steps can be performed independently if so desired with the other functions of the `AutoChem` class.
+
+#### Morfeus calculation
+
+To calculate the morfeus properties of some molecules, we need the individual .smi files for each of the molecules inside a directory (they can be stored in further subdirectories inside, the controller will look for .smi files recursively through the dir tree) and optionally the .log and .xyz files **with the same names as the .smi files**.
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/morf_1.png" alt="morf_1" width="600">
+</p>
+
+With this, we can use the `AutoChem` object to calculate the morfeus properties for each molecule first and then we join all intermediate .csv files into a single one. Please, bear in mind that this is the most computationally expensive process (other than using Gaussian for calculations, but that is outside the scope of this package), and so it can take quite a while:
+
+```python
+# Calculate morfeus properties
+controller.process_morfeus(data_dir=path_to_folder)
+```
+
+This method creates a .csv file for each processed molecule with its morfeus properties. Afterwards, we can join all of them together into a single table. This table can be your last step if you do not want to process .log files:
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/morf_2.png" alt="morf_2" width="600">
+</p>
+
+
+```python
+# Join all morfeus .csv separate files into a single one
+controller.join_morfeus_csv_files(data_dir=path_to_folder)
+```
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/morf_3.png" alt="morf_3" width="600">
+</p>
+
+#### .log file extraction 
+
+We can join all the extracted information from different .log files into a single .csv with a single function call:
+
+```python
+controller.process_log_files(data_dir=path_to_folder, output_path=path_to_folder)
+```
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/log.png" alt="log" width="600">
+</p>
+
+#### Merging all files
+
+In this last step, we merge both the morfeus calculations and the log extractions into a single pandas dataframe and save it to a .csv file, obtaining the same result as with the `generate_dataset()` function:
+
+```python
+# Join both morfeus and log files
+res = controller.join_log_and_morfeus(log_dir=f'{path_to_folder}log_values.csv',
+                                      morfeus_dir=f'{self._format_path(path_to_folder)}morfeus_values.csv')
+                                
+# Store the dataframe as the final .csv file
+res.reset_index(drop=True, inplace=True)
+res.to_csv(f'{path_to_folder}full_dataset.csv', index=False)                           
+```
+
+<p align="center">
+  <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/full.png" alt="full" width="600">
+</p>
+
+#### Standalone script
+
+If, rather than using the package as a Python module, one prefers using this functionality as a standalone bash script, there is an example on the [main_api.py](https://github.com/dkesada/auto-qchem_exp/blob/master/markdowns/main_api.py) file on how to define it. This file could be used as an entry point to the package functionality through simple command prompt calls using the `argparse` module.
 
 

@@ -28,5 +28,6 @@ if __name__ == "__main__":
     # controller.process_log_files(data_dir=args.data_dir, output_path=args.data_dir)
     # controller.generate_gjf_files(args.smiles_file)
     controller.generate_dataset(data_dir=args.data_dir, gaussian=False)
+    controller.process_morfeus(data_dir='./')
 
     logger.info('Finished')
