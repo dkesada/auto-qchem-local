@@ -24,7 +24,6 @@ setup(
                       'xlrd>=2.0',
                       'openpyxl>=3.0',
                       'rdkit',
-                      'openbabel',
                       'matplotlib>=3.5',
                       'tqdm>=4.66.1',
                       'func-timeout>=4.3.5',

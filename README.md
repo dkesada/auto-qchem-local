@@ -28,6 +28,22 @@ conda install xtb-python --channel conda-forge
 
 After this, the package should be ready to generate datasets. More information on the installation of xtb can be found [here](https://xtb-docs.readthedocs.io/en/latest/setup.html) and [here](https://xtb-python.readthedocs.io/en/latest/installation.html) if needed.
 
+#### OpenBabel issues
+
+For now, and for quite a while now, OpenBabel does not like being installed with pip in Linux due to some [versioning bug](https://github.com/openbabel/openbabel/issues/2408). As such, I cannot add it in the install_requires, because then pip will fail installing the package from GitHub. To solve this, one needs to have OpenBabel already installed in their environment for the package to work. To do this, we need to first install the binaries (I'll assume we are on Linux, if not instructions can be found [here](https://open-babel.readthedocs.io/en/latest/Installation/install.html#install-binaries))
+
+```
+sudo apt-get install openbabel
+```
+
+And then we can use conda to install it (there's no other option for now, it's either conda or suffering):
+
+```
+conda install openbabel
+```
+
+I'll update the package requirements if I'm ever able to install OpenBabel in Linux using pip. But for now, it is what it is.
+
 ### Code structure
 
 The main functionality of the package is separated into different objects inside the [api](https://github.com/dkesada/auto-qchem_exp/tree/master/autoqchem_local/api) module: the `GjfGenerator` class that controls the generation of Gaussian input files, the `MorfeusGenerator` class that controls the morfeus calculations, the `LogExtractor` class that controls the extraction of information out of Gaussian .log files and the `AutoChem` controller class that serves as the main entry point to the package.
