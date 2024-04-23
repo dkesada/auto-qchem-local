@@ -127,7 +127,7 @@ In this last step, we merge both the morfeus calculations and the log extraction
 ```python
 # Join both morfeus and log files
 res = controller.join_log_and_morfeus(log_dir=f'{path_to_folder}log_values.csv',
-                                      morfeus_dir=f'{self._format_path(path_to_folder)}morfeus_values.csv')
+                                      morfeus_dir=f'{path_to_folder}morfeus_values.csv')
                                 
 # Store the dataframe as the final .csv file
 res.reset_index(drop=True, inplace=True)
