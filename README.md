@@ -20,7 +20,13 @@ You will need to install this autoq-chem version from GitHub with the following 
 pip install git+https://github.com/dkesada/auto-qchem_exp.git
 ```
 
-Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, but I haven't tried it) machines, because they need the xtb handler for Python, and that is only available in Linux. This will not work on Windows.
+Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, but I haven't tried it) machines, because they need the xtb handler for Python, and that is only available in Linux. This will not work on Windows. To install the xtb python handler in linux, run the following command (I use conda, but pip could also be used):
+
+```
+conda install xtb --channel conda-forge
+```
+
+After this, the package should be ready to generate datasets. More information on the installation of xtb can be found [here](https://xtb-docs.readthedocs.io/en/latest/setup.html) if needed.
 
 ### Code structure
 
