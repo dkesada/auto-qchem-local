@@ -55,7 +55,7 @@ class AutoChem:
     """
 
     def __init__(self, log=None, log_to_file=True, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf',
-                 theory="B3LYP", solvent='None', light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD",
+                 theory="B3LYP", solvent='none', light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD",
                  generic_basis_set="genecp", max_light_atomic_number=25, n_confs=5):
         """
         Initialize the AutoChem object with the defaults for each of the components
@@ -64,7 +64,7 @@ class AutoChem:
         :param workdir_gjf: output directory for the .gjf files
         :param workflow_type: Gaussian workflow type, allowed types are: 'equilibrium' or 'transition_state'
         :param theory: Gaussian supported Functional (e.g., APFD, B3LYP)
-        :param solvent: Gaussian supported Solvent (e.g., TETRAHYDROFURAN)
+        :param solvent: Gaussian supported Solvent (e.g., none, TETRAHYDROFURAN)
         :param light_basis_set: Gaussian supported basis set for elements up to `max_light_atomic_number`
         (e.g., 6-31G*, 6-31+G(d,p))
         :param heavy_basis_set: Gaussian supported basis set for elements heavier than `max_light_atomic_number`

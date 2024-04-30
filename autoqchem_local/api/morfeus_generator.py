@@ -16,7 +16,7 @@ class MismatchAtomNumber(Exception):
 
 
 class MorfeusGenerator:
-    def __init__(self, log=None, n_confs=5, solvent=None):
+    def __init__(self, log=None, n_confs=5, solvent='none'):
         if log:
             self.logger = log
         else:

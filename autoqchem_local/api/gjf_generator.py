@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class GjfGenerator:
     def __init__(self, log=None, conv_timeout=40, workflow_type="custom", workdir_gjf='./output_gjf', theory="B3LYP",
-                 solvent="None", light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD", generic_basis_set="genecp",
+                 solvent="none", light_basis_set="6-31+G(d,p)", heavy_basis_set="SDD", generic_basis_set="genecp",
                  max_light_atomic_number=25):
         if log:
             self.logger = log

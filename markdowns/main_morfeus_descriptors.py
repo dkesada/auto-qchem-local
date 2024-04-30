@@ -197,7 +197,7 @@ if __name__ == "__main__":
                         default=5)
     parser.add_argument("--solvent", type=str, help="XTB supported solvents and their names can be found at "
                                                     "https://xtb-docs.readthedocs.io/en/latest/gbsa.html",
-                        default=None)
+                        default='none')
 
     args = parser.parse_args()
 
