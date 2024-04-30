@@ -20,6 +20,8 @@ class GjfGenerator:
         self.workflow_type = workflow_type
         self.workdir_gjf = workdir_gjf
         self.theory = theory
+        if solvent is None:
+            solvent = "none"
         self.solvent = solvent
         self.light_basis_set = light_basis_set
         self.heavy_basis_set = heavy_basis_set
