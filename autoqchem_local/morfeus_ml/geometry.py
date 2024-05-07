@@ -75,3 +75,19 @@ def get_central_carbon(elements, coordinates, metal_idx):
 
     return carbon_idx[carbon_min_idx]
 
+
+def get_carbon_single_nitro(elements, coordinates, metal_idx):
+    # Get all carbon indexes
+    carbon_idx = get_all_idx('C', elements)
+
+    # Get all nitrogen indexes
+    nitrogen_idx = get_all_idx('N', elements)
+
+    # Calculate carbon distances to the nitrogen and metal atoms
+    carbon_dist = [euclid_dist(coordinates[idx], coordinates[metal_idx]) +
+                   euclid_dist(coordinates[idx], coordinates[nitrogen_idx[0]]) for idx in carbon_idx]
+
+    # Get the closest carbon
+    carbon_min_idx = np.argmin(carbon_dist)
+
+    return carbon_idx[carbon_min_idx]

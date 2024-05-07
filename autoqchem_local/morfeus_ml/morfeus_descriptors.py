@@ -11,7 +11,7 @@ from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
 from morfeus.data import atomic_symbols, atomic_numbers
 from autoqchem_local.morfeus_ml.data import metals
-from autoqchem_local.morfeus_ml.geometry import get_closest_atom_to_metal, get_central_carbon
+from autoqchem_local.morfeus_ml.geometry import get_closest_atom_to_metal, get_central_carbon, get_all_idx, get_carbon_single_nitro
 
 import openbabel.pybel as pybel
 from openbabel.openbabel import OBMol
@@ -73,12 +73,21 @@ def get_specific_atom_sterimol(elements, coords, metal_idx):
     if not isinstance(elements[0], str):
         elements = convert_to_symbol(elements)
 
+    # Check how many nitrogen atoms are in the molecule
+    nitro = get_all_idx('N', elements)
+
     # The case of the phosphorus, I get the closest one to the metal
     if 'P' in elements:
         res = get_closest_atom_to_metal('P', elements, metal_idx, coords)
     # The case of the metal-(nitrogen-carbon-nitrogen), I get the carbon in the middle
-    else:
+    elif len(nitro) == 2:
         res = get_central_carbon(elements, coords, metal_idx)
+    # The case of the metal-carbon-nitrogen, I get the carbon in the middle
+    elif len(nitro) == 1:
+        res = get_carbon_single_nitro(elements, coords, metal_idx)
+    # Default case: just get the closes Carbon to the metal. Probably not what the user wants
+    else:
+        res = get_closest_atom_to_metal('C', elements, metal_idx, coords)
 
     return res
 

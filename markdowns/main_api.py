@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     logger.info('Started')
 
-    controller = AutoChem(log_to_file=True, n_confs=args.n_confs)
+    controller = AutoChem(log_to_file=True, n_confs=args.n_confs, heavy_basis_set='lanl2dz')
     # controller.process_log_files(data_dir=args.data_dir, output_path=args.data_dir)
     controller.generate_gjf_files(args.smiles_file)
     # controller.generate_dataset(data_dir=args.data_dir, gaussian=False)
