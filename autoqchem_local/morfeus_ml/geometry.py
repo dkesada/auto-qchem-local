@@ -18,7 +18,7 @@ def get_all_idx(atom, elements):
     Return all indexes of specified atom inside elements
     """
 
-    return [x for x in range(len(elements)) if atom in elements[x]]
+    return [x for x in range(len(elements)) if atom == elements[x]]
 
 
 def get_first_idx(atom, elements):
