@@ -14,7 +14,6 @@ setup(
                       'pandas>=1.3',
                       'pyyaml>=6.0',
                       'scipy>=1.7',
-                      'pymongo>=3.10',
                       'xlrd>=2.0',
                       'openpyxl>=3.0',
                       'rdkit',
