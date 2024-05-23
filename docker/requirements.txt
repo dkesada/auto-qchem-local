@@ -1,0 +1,14 @@
+numpy==1.22
+pandas==2.0.3
+pyyaml==6.0.1
+scipy==1.7.3
+xlrd==2.0.1
+openpyxl==3.0.10
+rdkit==2023.9.4
+matplotlib==3.7.2
+tqdm==4.66.1
+func-timeout==4.3.5
+morfeus-ml==0.7.2
+qcengine==0.29.0
+geometric==1.0.2
+boto3

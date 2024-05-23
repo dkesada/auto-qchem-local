@@ -20,7 +20,8 @@ setup(
                       'matplotlib>=3.5',
                       'tqdm>=4.66.1',
                       'func-timeout>=4.3.5',
-                      'morfeus-ml>=0.7.2'
+                      'morfeus-ml>=0.7.2',
+                      'qcengine>=0.29.0'
                       ],
     python_requires='>=3.8'
 )

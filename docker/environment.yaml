@@ -1,0 +1,11 @@
+# environment.yaml
+
+name: auto_qchem
+channels:
+  - conda-forge
+dependencies:
+  - python==3.8
+  - anaconda
+  - pip
+  - pip:
+    - -r ./requirements.txt
