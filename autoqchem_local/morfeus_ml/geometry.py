@@ -1,5 +1,16 @@
 import numpy as np
+from morfeus.data import atomic_symbols, atomic_numbers
 # from scipy.spatial.distance import cdist
+
+
+def convert_to_symbol(elements):
+    """ Converts an element vector from number format to str format """
+    return np.array(list(map(lambda x: atomic_symbols[x], elements)))
+
+
+def convert_to_numbers(elements):
+    """ Converts an element vector from str format to number format """
+    return np.array(list(map(lambda x: atomic_numbers[x], elements)))
 
 
 def euclid_dist(p1, p2):
@@ -43,6 +54,19 @@ def get_closest_atom_to_metal(atom, elements, metal_idx, coordinates):
     dist = [euclid_dist(metal_coords, coordinates[x]) for x in atoms_idx]
 
     return atoms_idx[np.argmin(dist)]
+
+
+def get_all_closest_atom_to_metal(atom, elements, metal_idx, coordinates):
+    """
+    Return the index of the all elements that matches atom to the metal in metal_idx sorted by proximity.
+    The first one in the list is the closest and the last one the furthest away.
+    """
+    atoms_idx = np.array(get_all_idx(atom, elements))
+    metal_coords = coordinates[metal_idx]
+    dist = [euclid_dist(metal_coords, coordinates[x]) for x in atoms_idx]
+    ord_idx = np.argsort(dist)
+
+    return atoms_idx[np.argsort(dist)]
 
 
 def get_dist_vector(atom_idx, coordinates):
@@ -91,3 +115,14 @@ def get_carbon_single_nitro(elements, coordinates, metal_idx):
     carbon_min_idx = np.argmin(carbon_dist)
 
     return carbon_idx[carbon_min_idx]
+
+
+def get_three_point_angle(central_p, p1, p2):
+    # Derived from the law of cosine, all points are coordinates
+    c = euclid_dist(p1, p2)
+    a = euclid_dist(central_p, p1)
+    b = euclid_dist(central_p, p2)
+    cos = (a*a + b*b - c*c) / (2*a*b)
+
+    return np.rad2deg(np.arccos(cos))
+

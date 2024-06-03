@@ -1,7 +1,10 @@
 import logging
 import pandas as pd
+import numpy as np
 
 from autoqchem_local.autoqchem.gaussian_log_extractor import gaussian_log_extractor
+from autoqchem_local.morfeus_ml.geometry import (convert_to_symbol, get_first_idx, get_all_closest_atom_to_metal,
+                                                 get_closest_atom_to_metal, get_three_point_angle, euclid_dist)
 
 try:
     from openbabel import pybel  # openbabel 3.0.0
@@ -87,8 +90,6 @@ class LogExtractor:
             dictionary['atom_descriptors'].pop('NPA_valence', None)
             dictionary['atom_descriptors'].pop('NPA_Rydberg', None)
             dictionary['atom_descriptors'].pop('NPA_total', None)
-            dictionary['atom_descriptors'].pop('NMR_shift', None)
-            dictionary['atom_descriptors'].pop('NMR_anisotropy', None)
 
         if dictionary['modes']:
             dictionary['modes'].pop('Frequencies', None)
@@ -104,6 +105,114 @@ class LogExtractor:
         # dictionary['labels'] = {'labels': dictionary['labels']}  # Labels gives an error
         dictionary.pop('labels', None)
 
+    @staticmethod
+    def get_elems_and_coords(extractor, desc):
+        # Obtain the element list and coordinates
+        coordinates = np.array([[x, y, z] for x, y, z in
+                                zip(desc['atom_descriptors']['X'], desc['atom_descriptors']['Y'],
+                                    desc['atom_descriptors']['Z'])])
+
+        try:
+            elements = convert_to_symbol([int(e) for e in extractor.labels])
+        except ValueError:
+            elements = extractor.labels
+
+        return elements, coordinates
+
+    @staticmethod
+    def calculate_pd_angle_dist(elements, coordinates):
+        """
+        Calculate the angles and distances in the cross P-Pd-P Cl-Pd-Cl. One of the P can also be a C in some cases.
+        Returns all these values inside a dictionary
+        """
+
+        # Get the necessary indices of all involved elements
+        pd_idx = get_first_idx('Pd', elements)
+        p_idx = get_all_closest_atom_to_metal('P', elements, pd_idx, coordinates)
+        cl_idx = get_all_closest_atom_to_metal('Cl', elements, pd_idx, coordinates)[0:2]  # Closest two Cl to Pd
+        if len(p_idx) < 2:
+            p_idx = np.append(p_idx, get_closest_atom_to_metal('C', elements, pd_idx, coordinates))  # Closest C if no double P
+
+        res = {}
+
+        # Calculate the angles
+        res['p_pd_p_angle'] = get_three_point_angle(coordinates[pd_idx], coordinates[p_idx[0]], coordinates[p_idx[1]])
+        res['cl_pd_cl_angle'] = get_three_point_angle(coordinates[pd_idx], coordinates[cl_idx[0]],
+                                                      coordinates[cl_idx[1]])
+
+        # Calculate the distances, from closest to furthest. ppd1 will always be the closest P (or C) to the Pd
+        res['ppd1'] = euclid_dist(coordinates[pd_idx], coordinates[p_idx[0]])
+        res['ppd2'] = euclid_dist(coordinates[pd_idx], coordinates[p_idx[1]])
+        res['clpd1'] = euclid_dist(coordinates[pd_idx], coordinates[cl_idx[0]])
+        res['clpd2'] = euclid_dist(coordinates[pd_idx], coordinates[cl_idx[1]])
+
+        return res
+
+    @staticmethod
+    def extract_apt_nmr_npa(elements, coordinates, desc):
+        """
+        Extract some specific useful properties
+        """
+        # Get the necessary indices of all involved elements
+        pd_idx = get_first_idx('Pd', elements)
+        p_idx = get_all_closest_atom_to_metal('P', elements, pd_idx, coordinates)
+        cl_idx = get_all_closest_atom_to_metal('Cl', elements, pd_idx, coordinates)[0:2]  # Closest two Cl to Pd
+        if len(p_idx) < 2:
+            p_idx = np.append(p_idx, get_closest_atom_to_metal('C', elements, pd_idx, coordinates))  # Closest C if no double P
+
+        res = {}
+
+        # APT charges
+        res['p1_apt_charge'] = float(desc['atom_descriptors']['APT_charge'][p_idx[0]])
+        res['p2_apt_charge'] = float(desc['atom_descriptors']['APT_charge'][p_idx[1]])
+        res['pd_atp_charge'] = float(desc['atom_descriptors']['APT_charge'][pd_idx])
+        res['cl1_apt_charge'] = float(desc['atom_descriptors']['APT_charge'][cl_idx[0]])
+        res['cl2_apt_charge'] = float(desc['atom_descriptors']['APT_charge'][cl_idx[1]])
+
+        # NMR
+        res['p1_nmr_shift'] = float(desc['atom_descriptors']['NMR_shift'][p_idx[0]])
+        res['p2_nmr_shif'] = float(desc['atom_descriptors']['NMR_shift'][p_idx[1]])
+        res['p1_nmr_anis'] = float(desc['atom_descriptors']['NMR_anisotropy'][p_idx[0]])
+        res['p2_nmr_anis'] = float(desc['atom_descriptors']['NMR_anisotropy'][p_idx[1]])
+
+        # NPA charge
+        res['p1_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][p_idx[0]])
+        res['p2_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][p_idx[1]])
+        res['pd_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][pd_idx])
+        res['cl1_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][cl_idx[0]])
+        res['cl2_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][cl_idx[1]])
+
+        # NPA core
+        res['p1_npa_core'] = float(desc['atom_descriptors']['NPA_core'][p_idx[0]])
+        res['p2_npa_core'] = float(desc['atom_descriptors']['NPA_core'][p_idx[1]])
+        res['pd_npa_core'] = float(desc['atom_descriptors']['NPA_core'][pd_idx])
+        res['cl1_npa_core'] = float(desc['atom_descriptors']['NPA_core'][cl_idx[0]])
+        res['cl2_npa_core'] = float(desc['atom_descriptors']['NPA_core'][cl_idx[1]])
+
+        # NPA valence
+        res['p1_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][p_idx[0]])
+        res['p2_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][p_idx[1]])
+        res['pd_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][pd_idx])
+        res['cl1_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][cl_idx[0]])
+        res['cl2_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][cl_idx[1]])
+
+        # NPA Rydberg
+        res['p1_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][p_idx[0]])
+        res['p2_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][p_idx[1]])
+        res['pd_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][pd_idx])
+        res['cl1_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][cl_idx[0]])
+        res['cl2_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][cl_idx[1]])
+
+        # NPA total
+        res['p1_npa_total'] = float(desc['atom_descriptors']['NPA_total'][p_idx[0]])
+        res['p2_npa_total'] = float(desc['atom_descriptors']['NPA_total'][p_idx[1]])
+        res['pd_npa_total'] = float(desc['atom_descriptors']['NPA_total'][pd_idx])
+        res['cl1_npa_total'] = float(desc['atom_descriptors']['NPA_total'][cl_idx[0]])
+        res['cl2_npa_total'] = float(desc['atom_descriptors']['NPA_total'][cl_idx[1]])
+
+        return res
+
+
     def export_to_pandas(self, log_path):
         """
         Main access point to the log extractors. Converts a .log file into a pandas dataframe and returns it
@@ -112,6 +221,12 @@ class LogExtractor:
         """
         extractor = gaussian_log_extractor(log_path, self.logger)
         desc = extractor.get_descriptors()
+
+        # Specific calculations, usually commented
+        #elements, coordinates = self.get_elems_and_coords(extractor, desc)
+        #desc['pd_angle_dist'] = self.calculate_pd_angle_dist(elements, coordinates)
+        #desc['pd_vals'] = self.extract_apt_nmr_npa(elements, coordinates, desc)
+
         self.filter_extractor_dict(desc)
         df = self.dict_csv_conversor(desc)
 

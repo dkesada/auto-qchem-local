@@ -9,9 +9,9 @@ from rdkit import Chem
 
 from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
-from morfeus.data import atomic_symbols, atomic_numbers
 from autoqchem_local.morfeus_ml.data import metals
-from autoqchem_local.morfeus_ml.geometry import get_closest_atom_to_metal, get_central_carbon, get_all_idx, get_carbon_single_nitro
+from autoqchem_local.morfeus_ml.geometry import (get_closest_atom_to_metal, get_central_carbon, get_all_idx,
+                                                 get_carbon_single_nitro, convert_to_symbol)
 
 import openbabel.pybel as pybel
 from openbabel.openbabel import OBMol
@@ -25,16 +25,6 @@ os.environ['NWCHEM_BASIS_LIBRARY'] = '/home/zuranski/miniconda3/envs/qml/share/n
 class InvalidSmiles(Exception):
     """ Raised when a SMILES cannot be converted into either a rdkit or openbabel mol """
     pass
-
-
-def convert_to_symbol(elements):
-    """ Converts an element vector from number format to str format """
-    return np.array(list(map(lambda x: atomic_symbols[x], elements)))
-
-
-def convert_to_numbers(elements):
-    """ Converts an element vector from str format to number format """
-    return np.array(list(map(lambda x: atomic_numbers[x], elements)))
 
 
 def convert_to_ob_mol(smiles, n_confs):
