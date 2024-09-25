@@ -116,6 +116,17 @@ def compute(smiles, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, 
     # create conformer ensemble
     ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
                                       n_threads=os.cpu_count() - 1)
+
+    # sometimes optimization fails and you get 0 conformers and no error, this retries optimization several times
+    max_ret = 20
+    n_ret = 0
+    while len(ce) == 0 and n_ret < max_ret:
+        ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs, n_threads=os.cpu_count() - 1)
+        n_ret += 1
+
+    if len(ce) == 0:
+        raise Exception('No conformers could be generated.')
+
     # except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
     #     ce = convert_to_ob_mol(smiles, n_confs)
 
@@ -152,6 +163,17 @@ def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2
     # create conformer ensemble
     ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs,
                                       n_threads=os.cpu_count() - 1)
+
+    # sometimes optimization fails and you get 0 conformers and no error, this retries optimization several times
+    max_ret = 20
+    n_ret = 0
+    while len(ce) == 0 and n_ret < max_ret:
+        ce = ConformerEnsemble.from_rdkit(smiles, n_confs=n_confs, n_threads=os.cpu_count() - 1)
+        n_ret += 1
+
+    if len(ce) == 0:
+        raise Exception('No conformers could be generated.')
+
     # except Exception:  # Rdkit conversion fails for some SMILES, using openbabel instead. Can't get specific exception
     #    ce = convert_to_ob_mol(smiles, n_confs)
 

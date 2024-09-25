@@ -69,6 +69,7 @@ class LogExtractor:
 
         return res
 
+
     @staticmethod
     def filter_extractor_dict(dictionary):
         if dictionary['descriptors']:
@@ -149,9 +150,9 @@ class LogExtractor:
         return res
 
     @staticmethod
-    def extract_apt_nmr_npa(elements, coordinates, desc):
+    def extract_pd_props(elements, coordinates, desc):
         """
-        Extract some specific useful properties
+        Extract some specific useful properties for paladium
         """
         # Get the necessary indices of all involved elements
         pd_idx = get_first_idx('Pd', elements)
@@ -212,6 +213,72 @@ class LogExtractor:
 
         return res
 
+    @staticmethod
+    def extract_mo_props(elements, coordinates, desc):
+        """
+        Extract some specific useful properties for molybdenum
+        """
+        # Get the necessary indices of all involved elements
+        mo_idx = get_first_idx('Mo', elements)
+
+        res = {}
+
+        # Mulliken charge
+        res['mo_mulliken_charge'] = float(desc['atom_descriptors']['Mulliken_charge'][mo_idx])
+
+        # APT charges
+        res['mo_apt_charge'] = float(desc['atom_descriptors']['APT_charge'][mo_idx])
+
+        # NMR shift
+        res['mo_nmr_shift'] = float(desc['atom_descriptors']['NMR_shift'][mo_idx])
+
+        # NPA charge
+        res['mo_npa_charge'] = float(desc['atom_descriptors']['NPA_charge'][mo_idx])
+
+        # NPA valence
+        res['mo_npa_valence'] = float(desc['atom_descriptors']['NPA_valence'][mo_idx])
+
+        # NPA Rydberg
+        res['mo_npa_rydberg'] = float(desc['atom_descriptors']['NPA_Rydberg'][mo_idx])
+
+        # NPA total
+        res['mo_npa_total'] = float(desc['atom_descriptors']['NPA_total'][mo_idx])
+
+        return res
+
+    @staticmethod
+    def extract_closer_o_props(elements, coordinates, desc):
+        """
+        Extract some specific useful properties for molybdenum
+        """
+        # Get the necessary indices of all involved elements
+        mo_idx = get_first_idx('Mo', elements)
+        o_idx = get_all_closest_atom_to_metal('O', elements, mo_idx, coordinates)  # All oxygen atoms by proximity
+
+        res = {}
+
+        # Mulliken charge
+        res['o_mulliken_charge'] = [float(i) for i in np.array(desc['atom_descriptors']['Mulliken_charge'])[o_idx]]
+
+        # APT charges
+        res['o_apt_charge'] = [float(i) for i in np.array(desc['atom_descriptors']['APT_charge'])[o_idx]]
+
+        # NMR shift
+        res['o_nmr_shift'] = [float(i) for i in np.array(desc['atom_descriptors']['NMR_shift'])[o_idx]]
+
+        # NPA charge
+        res['o_npa_charge'] = [float(i) for i in np.array(desc['atom_descriptors']['NPA_charge'])[o_idx]]
+
+        # NPA valence
+        res['o_npa_valence'] = [float(i) for i in np.array(desc['atom_descriptors']['NPA_valence'])[o_idx]]
+
+        # NPA Rydberg
+        res['o_npa_rydberg'] = [float(i) for i in np.array(desc['atom_descriptors']['NPA_Rydberg'])[o_idx]]
+
+        # NPA total
+        res['o_npa_total'] = [float(i) for i in np.array(desc['atom_descriptors']['NPA_total'])[o_idx]]
+
+        return res
 
     def export_to_pandas(self, log_path):
         """
@@ -225,7 +292,9 @@ class LogExtractor:
         # Specific calculations, usually commented
         #elements, coordinates = self.get_elems_and_coords(extractor, desc)
         #desc['pd_angle_dist'] = self.calculate_pd_angle_dist(elements, coordinates)
-        #desc['pd_vals'] = self.extract_apt_nmr_npa(elements, coordinates, desc)
+        #desc['pd_vals'] = self.extract_pd_props(elements, coordinates, desc)
+        #desc['mo_vals'] = self.extract_mo_props(elements, coordinates, desc)
+        #desc['o_vals'] = self.extract_closer_o_props(elements, coordinates, desc)
 
         self.filter_extractor_dict(desc)
         df = self.dict_csv_conversor(desc)
