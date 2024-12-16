@@ -73,7 +73,7 @@ class gaussian_input_generator(object):
         elif workflow_type == "custom_metal":
             self.tasks = (
                 f"opt {theory}/{basis_set} {solvent_input}scf=xqc EmpiricalDispersion=GD3",
-                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NPA density=current Geom=AllCheck Guess=Read EmpiricalDispersion=GD3"
+                f"freq {theory}/{basis_set} {solvent_input}volume NMR pop=NBO density=current Geom=AllCheck Guess=Read EmpiricalDispersion=GD3"
             )
         elif workflow_type == "test":
             self.tasks = (
