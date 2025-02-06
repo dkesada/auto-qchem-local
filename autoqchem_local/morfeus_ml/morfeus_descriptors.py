@@ -11,7 +11,7 @@ from morfeus.conformer import ConformerEnsemble, Conformer
 from morfeus import Sterimol, BuriedVolume, XTB, ConeAngle, SASA, Dispersion, Pyramidalization, SolidAngle, BiteAngle
 from autoqchem_local.morfeus_ml.data import metals
 from autoqchem_local.morfeus_ml.geometry import (get_closest_atom_to_metal, get_central_carbon, get_all_idx,
-                                                 get_carbon_single_nitro, convert_to_symbol)
+                                                 get_carbon_single_nitro, convert_to_symbol, euclid_dist)
 
 import openbabel.pybel as pybel
 from openbabel.openbabel import OBMol
@@ -50,6 +50,32 @@ def convert_to_ob_mol(smiles, n_confs):
 
     return ce
 
+def get_specific_N_sterimol(elements, coords):
+    res = None
+
+    # Standardize the str format
+    if not isinstance(elements[0], str):
+        elements = convert_to_symbol(elements)
+
+    # Check how many nitrogen atoms are in the molecule
+    nitro = get_all_idx('N', elements)
+    
+    # Get the NH nitrogen in case there is multiple
+    if len(nitro) == 2:
+        res = -1
+        dist = 100
+        
+        for n in nitro:
+            h_idx = get_closest_atom_to_metal('H', elements, n, coords)
+            n_h_dist = euclid_dist(coords[4], coords[h_idx])
+            if dist > n_h_dist:
+                dist = n_h_dist
+                res = n
+                
+    if len(nitro) == 1:
+        res = nitro[0]
+
+    return res
 
 def get_specific_atom_sterimol(elements, coords, metal_idx):
     """
