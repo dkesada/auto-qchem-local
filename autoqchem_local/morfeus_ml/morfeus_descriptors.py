@@ -67,7 +67,7 @@ def get_specific_N_sterimol(elements, coords):
         
         for n in nitro:
             h_idx = get_closest_atom_to_metal('H', elements, n, coords)
-            n_h_dist = euclid_dist(coords[4], coords[h_idx])
+            n_h_dist = euclid_dist(coords[n], coords[h_idx])
             if dist > n_h_dist:
                 dist = n_h_dist
                 res = n
