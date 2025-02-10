@@ -61,13 +61,25 @@ def get_specific_N_sterimol(elements, coords):
     nitro = get_all_idx('N', elements)
     
     # Get the NH nitrogen in case there is multiple
+    # if len(nitro) == 2:
+    #    res = -1
+    #    dist = 100
+    #    
+    #     for n in nitro:
+    #         h_idx = get_closest_atom_to_metal('H', elements, n, coords)
+    #         n_h_dist = euclid_dist(coords[n], coords[h_idx])
+    #         if dist > n_h_dist:
+    #             dist = n_h_dist
+    #             res = n
+    
+    # Get the NH2 nitrogen in case there is multiple
     if len(nitro) == 2:
+        hs = get_all_idx('H', elements)
         res = -1
         dist = 100
-        
+
         for n in nitro:
-            h_idx = get_closest_atom_to_metal('H', elements, n, coords)
-            n_h_dist = euclid_dist(coords[n], coords[h_idx])
+            n_h_dist = sum([euclid_dist(coords[n], coords[h]) for h in hs])
             if dist > n_h_dist:
                 dist = n_h_dist
                 res = n
