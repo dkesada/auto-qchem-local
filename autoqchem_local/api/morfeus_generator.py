@@ -3,6 +3,7 @@ import logging
 from rdkit import Chem
 from autoqchem_local.morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
 from morfeus import read_xyz
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -65,3 +66,16 @@ class MorfeusGenerator:
         os.makedirs(os.path.dirname(f"{output_path}/{file_name}.csv"), exist_ok=True)
         with open(f"{output_path}/{file_name}.csv", "wb") as f:
             descs.to_frame(smiles).T.to_csv(f, index_label="smiles")
+            
+    def extract_properties_mol(self, mol):
+        """
+        Extract the morfeus properties of a rdkit.Chem.rdchem.Mol file and return them as a pandas DataFrame
+        """
+
+        ce = compute(mol, n_confs=self.n_confs, solvent=self.solvent)
+
+        # Calculate the descriptors of the ensemble
+        descs = get_descriptors(ce)
+        descs = pd.DataFrame([descs.values], columns=descs.index)
+
+        return descs
