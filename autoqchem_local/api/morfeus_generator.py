@@ -76,6 +76,6 @@ class MorfeusGenerator:
 
         # Calculate the descriptors of the ensemble
         descs = get_descriptors(ce)
-        descs = pd.DataFrame([descs.values], columns=descs.index)
+        descs = DataFrame([descs.values], columns=descs.index)
 
         return descs
