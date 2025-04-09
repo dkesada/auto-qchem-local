@@ -49,6 +49,9 @@ def get_closest_atom_to_metal(atom, elements, metal_idx, coordinates):
     """
     Return the index of the closest element that matches atom to the metal in metal_idx
     """
+    if not isinstance(elements[0], str):
+        elements = convert_to_symbol(elements)
+    
     atoms_idx = get_all_idx(atom, elements)
     metal_coords = coordinates[metal_idx]
     dist = [euclid_dist(metal_coords, coordinates[x]) for x in atoms_idx]
