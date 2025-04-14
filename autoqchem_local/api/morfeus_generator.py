@@ -34,9 +34,8 @@ class MorfeusGenerator:
         MismatchAtomNumber if the number of atoms in the SMILES and the xyz does not match.
         """
         # Read the .smi file
-        smi_file = open(f'{file_name}.smi', 'r')
-        smiles = smi_file.readlines()  # This should only contain a single smile
-        smi_file.close()
+        with open(f'{file_name}.smi', 'r') as smi_file:
+            smiles = smi_file.readlines()  # This should only contain a single smile
         smiles = smiles[0]
         smiles = smiles.replace('\n', '')
 
@@ -62,10 +61,11 @@ class MorfeusGenerator:
 
         # Calculate the descriptors of the ensemble
         descs = get_descriptors(ce)
+        res = DataFrame([descs.values], columns=descs.index)
 
-        os.makedirs(os.path.dirname(f"{output_path}/{file_name}.csv"), exist_ok=True)
-        with open(f"{output_path}/{file_name}.csv", "wb") as f:
-            descs.to_frame(smiles).T.to_csv(f, index_label="smiles")
+        os.makedirs(f"{output_path}", exist_ok=True)
+        res.insert(0, 'smiles', smiles)
+        res.to_csv(f"{output_path}/{file_name}.csv", index=False)
             
     def extract_properties_mol(self, mol):
         """
