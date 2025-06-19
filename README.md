@@ -42,17 +42,17 @@ conda install openbabel
 
 I'll update the package requirements if I'm ever able to install OpenBabel in Linux using pip. But for now, it is what it is.
 
-### Code structure
+## Code structure
 
 The main functionality of the package is separated into different objects inside the [api](https://github.com/dkesada/auto-qchem_exp/tree/master/autoqchem_local/api) module: the `GjfGenerator` class that controls the generation of Gaussian input files, the `MorfeusGenerator` class that controls the morfeus calculations, the `LogExtractor` class that controls the extraction of information out of Gaussian .log files and the `AutoChem` controller class that serves as the main entry point to the package.
 
-### Usage examples
+## Usage examples
 
 In the [markdowns](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns) folder there are some examples on how to use the package as a script tool with `argparse`. The [main_api.py](https://github.com/dkesada/auto-qchem_exp/blob/master/markdowns/main_api.py) shows how to use the `AutoChem` class as the main entry point to the api of the package. Each of these components can be used independently, but I would say that using only the `AutoChem` class is the easiest way to use the package.
 
 As for a full example, we have prepared some files and folders to showcase how to use this package. Inside the [markdowns](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns) folder, there is the [example](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns/example) directory with some example files and folders that we will use in the following sections.
 
-#### Input .gjf files generation
+### Input .gjf files generation
 
 Let's start with the generation of .gjf files. For this, the only thing we require is a single .smi file with a SMILES code per line for each of the compounds we want to analyze with Gaussian. An example .smi file is stored [here](https://github.com/dkesada/auto-qchem_exp/tree/master/markdowns/example/input_gaussian_files). In this case, we would have a folder like this:
 
@@ -79,7 +79,7 @@ This will generate a separate .gjf and .smi file for each SMILES in the original
 
 This generated .gjf files will be named after the InChI code of each molecule, because SMILES codes have characters that cannot be in file names. This files can now be inputed into Gaussian for calculation. The other .smi files with the same names as the .gjf files contain the SMILES code of each molecule and will be needed for the morfeus calculation part. Additionally, if the `log_to_file` parameter is set to `True`, a log file will be generated with all relevant execution information of the controller object. 
 
-#### Full dataset generation
+### Full dataset generation
 
 The dataset generation can be done all in one single function call or each part can be done individually. To begin this process, we need all .smi files and .log files if available in the same folder and with the same names. Additionally, a .xyz file with the coordinates of a conformer can also be present for each molecule. All files for the same molecule need to have the same name so that they can be joined in the same row in the final dataset. 
 
@@ -97,7 +97,7 @@ This generates intermediate files and eventually returns the full_dataset.csv fi
 
 All intermediate steps can be performed independently if so desired with the other functions of the `AutoChem` class.
 
-#### Morfeus calculation
+### Morfeus calculation
 
 To calculate the morfeus properties of some molecules, we need the individual .smi files for each of the molecules inside a directory (they can be stored in further subdirectories inside, the controller will look for .smi files recursively through the dir tree) and optionally the .log and .xyz files **with the same names as the .smi files**.
 
@@ -128,7 +128,7 @@ controller.join_morfeus_csv_files(data_dir=path_to_folder)
   <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/morf_3.png" alt="morf_3" width="600">
 </p>
 
-#### .log file extraction 
+### .log file extraction 
 
 We can join all the extracted information from different .log files into a single .csv with a single function call:
 
@@ -140,7 +140,7 @@ controller.process_log_files(data_dir=path_to_folder, output_path=path_to_folder
   <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/log.png" alt="log" width="600">
 </p>
 
-#### Merging all files
+### Merging all files
 
 In this last step, we merge both the morfeus calculations and the log extractions into a single pandas dataframe and save it to a .csv file, obtaining the same result as with the `generate_dataset()` function:
 
@@ -158,7 +158,7 @@ res.to_csv(f'{path_to_folder}full_dataset.csv', index=False)
   <img src="https://github.com/dkesada/auto-qchem_exp/blob/master/media/full.png" alt="full" width="600">
 </p>
 
-#### Standalone script
+### Standalone script
 
 If, rather than using the package as a Python module, one prefers using this functionality as a standalone bash script, there is an example on the [main_api.py](https://github.com/dkesada/auto-qchem_exp/blob/master/markdowns/main_api.py) file on how to define it. This file could be used as an entry point to the package functionality through simple command prompt calls using the `argparse` module.
 
