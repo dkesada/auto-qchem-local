@@ -10,9 +10,7 @@ Keep in mind that this also means that all concurrent computations are now perfo
 
 The idea of this fork is to provide the possibility to perform their own calculations to any lab that wants to do them, even if they do not have a cluster infrastructure.
 
-## Quick links
-
-### Installation instructions
+## Installation
 
 You will need to install this autoq-chem version from GitHub with the following command:
 
@@ -20,7 +18,7 @@ You will need to install this autoq-chem version from GitHub with the following 
 pip install git+https://github.com/dkesada/auto-qchem_exp.git
 ```
 
-Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, but I haven't tried it) machines, because they need the xtb handler for Python, and that is only available in Linux. This will not work on Windows. To install the xtb python handler in linux, run the following command (I use conda, but pip could also be used):
+Also, beware that Morfeus calculations **only** work on Linux (and maybe MacOS, but I haven't tried it) machines, because they need the xtb handler for Python, and that is only available in Linux. This will not work on Windows natively, but it can be used via the Windows subsystem for Linux (WSL), so it is also possible to install it in Windows machines with this intermediate layer. Alternatively, Docker is always a possible option for these kind of situations. To install the xtb python handler in Linux, run the following command (I use conda, but pip could also be used):
 
 ```
 conda install xtb-python --channel conda-forge
