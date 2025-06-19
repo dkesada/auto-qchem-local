@@ -120,6 +120,40 @@ def get_specific_atom_sterimol(elements, coords, metal_idx):
     return res
 
 
+def find_idx_substruct(mol, substruct='C#C'):
+    """
+    Get the indices of both C in a C#C bond, first the C in the smaller fragment
+    and then the C in the bigger fragment to orient the sterimol vector to the
+    core of the molecule. The mol object should come from conformer_ensemble.mol so
+    that the indices of each atom match those inside the conformers,
+    """
+
+    # Find the substructure atom indices
+    sub = Chem.MolFromSmiles(substruct)
+    matches = mol.GetSubstructMatches(sub)
+    c0 = matches[0][0]
+    c1 = matches[0][1]
+
+    # Split the molecule in two halves on the substructure and weigh them
+    bond = mol.GetBondBetweenAtoms(c0, c1)
+    frag = Chem.FragmentOnBonds(mol, [bond.GetIdx()])
+    atom_l = []
+    halves = Chem.rdmolops.GetMolFrags(frag, asMols=True, frags=atom_l)
+    h0 = atom_l[c0]
+    h1 = atom_l[c1]
+    weight = [Chem.Descriptors.ExactMolWt(x) for x in halves]
+
+    # The vector points from the smaller half to the bigger half
+    from_idx = c0
+    to_idx = c1
+
+    if weight[h1] < weight[h0]:
+        from_idx = c1
+        to_idx = c0
+
+    return from_idx, to_idx
+
+
 def reorder_coords(coords, elems, new_elems):
     """
     Reorders the coordinates of a conformer to have its atoms in the same order provided by new_elems.
@@ -289,7 +323,7 @@ def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
     for conf in conf_ensemble.conformers:
 
         # Get conformer properties
-        get_conf_props(conf)
+        get_conf_props(conf, mol=conf_ensemble.mol)
 
         if match is not None:
             # atomic features
@@ -326,7 +360,7 @@ def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
     return pd.Series(props)
 
 
-def get_conf_props(conf, elements=None, coordinates=None, solvent=None):
+def get_conf_props(conf, elements=None, coordinates=None, solvent=None, mol=None):
     """
     Get the properties of a conformer. If the conformer is None, then one will be created with the provided elements,
     coordinates and solvent.
