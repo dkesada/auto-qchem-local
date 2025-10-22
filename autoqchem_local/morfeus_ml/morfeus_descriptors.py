@@ -26,6 +26,31 @@ class InvalidSmiles(Exception):
     """ Raised when a SMILES cannot be converted into either a rdkit or openbabel mol """
     pass
 
+def mid_p_p(conf):
+    """ Find the (x,y,z) of the middle point between two P atoms in a conformer """
+    if not isinstance(conf.elements[0], str):
+        conf.elements = convert_to_symbol(conf.elements)
+
+    p_idx = get_all_idx('P', conf.elements)
+
+    if len(p_idx) == 2:
+        # Just get the middle point of the P1-P2 segment, that's the desired (x,y,z)
+        p1 = conf.coordinates[p_idx[0]]
+        p2 = conf.coordinates[p_idx[1]]
+        h_dummy = (p1 + p2) / 2
+    else:
+        raise ValueError('The conformer does not have 2 P atoms')
+
+    return h_dummy
+
+def sterimol_dummy_atom(conf, metal_idx, dummy_coord):
+    """ Calculate sterimol values of a metal with a dummy H atom that does not exist in the original conformer """
+    coordinates = np.append(conf.coordinates, [dummy_coord], axis=0)
+    elements = np.append(conf.elements, 'H')
+
+    sterimol = Sterimol(elements, coordinates, metal_idx, len(elements))
+
+    return sterimol
 
 def convert_to_ob_mol(smiles, n_confs):
     """ Attempt to convert a smiles into an openbabel molecule with the different forcefields available """
