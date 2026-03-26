@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from distutils.dir_util import copy_tree
 
 
 from autoqchem_local.api.gjf_generator import GjfGenerator
@@ -122,6 +123,24 @@ class AutoChem:
 
         for s in tqdm(smiles):
             self.gjf_gen.create_gjf_for_molecule(s)
+            
+    def copy_crest_outputs(self, crest_file='./crest_paths.txt'):
+        """
+        This function copies the CREST output folders specified in crest_file to the ./output_gjf folder
+        for descriptor calculation. For compatibility reasons, the folder output_gjf is kept, even though no
+        .gjf files are involved in this procedure.
+        """
+        with open('crest_paths.txt', 'r') as f:
+            dirs = f.readlines()
+
+        dirs = [x.split('\n')[0] for x in dirs]
+        dirs = [x for x in dirs if x != '']
+        xyz_dirs = ['./output_gjf/' + x.split('\\')[-1] for x in dirs]
+
+        for src, dest in zip(dirs, xyz_dirs):
+            _= copy_tree(src, dest)
+            
+        return xyz_dirs
 
     def _rec_compute_morfeus(self, data_dir='./', output_path='jobs'):
         """
@@ -170,17 +189,36 @@ class AutoChem:
             for d in dirs[1]:
                 self._rec_compute_morfeus(f'{prev_dir}/{d}', output_path)
             os.chdir(prev_dir)
+            
+    def compute_morfeus_crest(self, data_dir='./', output_path='jobs'):
+        """
+        Calculate the morfeus properties for all folders provided via dirs
+        These folders should be optimization results from CREST. They should also have representative names.
+        It will create .csv files with all results found
+        """
+        dirs = [data_dir + x for x in next(os.walk(data_dir))[1]]
+        
+        for d in dirs:
+            self.logger.info(f'Now processing folder {d.split("/")[-1]}')
+            try:  # There should not be calculation exceptions, CREST already performed most calculations
+                self.morf_gen.extract_properties_compound_crest(d, data_dir + output_path)
+            except Exception as e:
+                self.logger.warning(f'Unexpected exception: {e}')
 
-    def process_morfeus(self, data_dir='./', output_path='jobs'):
+    def process_morfeus(self, data_dir='./', output_path='jobs', crest=False):
         """
         Entry point that runs a morfeus calculation for each .smi file found in a directory and its subdirectories.
         This function will process all .smi files found and use morfeus to calculate the molecule properties.
         The .smi files are assumed to have only 1 line with a SMILES code.
         :param data_dir: the path to the directory where to perform the search and processing of .smi files
         :param output_path: the folder to be created in each subdirectory with the processed .csv files
+        :param crest: whether to use the conformers from CREST for morfeus calculation or not
         """
         prev_dir = os.getcwd()
-        self._rec_compute_morfeus(data_dir=data_dir, output_path=output_path)
+        if not crest:
+            self._rec_compute_morfeus(data_dir=data_dir, output_path=output_path)
+        else:
+            self.compute_morfeus_crest(data_dir=data_dir, output_path=output_path)
         os.chdir(prev_dir)
 
     def _rec_join_morfeus_csv_files(self, data_dir='./'):
@@ -314,7 +352,7 @@ class AutoChem:
 
         return res
 
-    def generate_dataset(self, data_dir='./', gaussian=True):
+    def generate_dataset(self, data_dir='./', gaussian=True, crest=False):
         """
         Global entry point of the api. This function runs the whole process from calculating the morfeus properties of
         each .smi file found. It takes all .log and .csv files in data_dir and its subdirectories and creates a full
@@ -323,11 +361,12 @@ class AutoChem:
         :param data_dir: the path to the directory where all .smi and .log files are stored. These files can be stored
         in further subdirectories inside
         :param gaussian: whether to process .log files or not
+        :param crest: whether to use the conformers from CREST for morfeus calculation or not
         """
         self.logger.info('Initiating full pipeline')
 
         # Calculate morfeus properties
-        self.process_morfeus(data_dir=data_dir)
+        self.process_morfeus(data_dir=data_dir, crest=crest)
         # Join all morfeus .csv separate files into a single one
         self.join_morfeus_csv_files(data_dir=data_dir)
 

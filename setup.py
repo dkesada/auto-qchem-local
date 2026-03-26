@@ -21,7 +21,8 @@ setup(
                       'tqdm>=4.66.1',
                       'func-timeout>=4.3.5',
                       'morfeus-ml>=0.7.2',
-                      'qcengine>=0.29.0'
+                      'qcengine>=0.29.0',
+                      'geometric>=1.1'
                       ],
     python_requires='>=3.8'
 )
