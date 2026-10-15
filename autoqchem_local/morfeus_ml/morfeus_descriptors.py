@@ -321,6 +321,21 @@ def compute_conf_crest(crest_output_path, n_confs=None, program='xtb', method='G
         conf.xtb = XTB(ce.elements, conf.coordinates, solvent=solvent, version='2')
 
     return ce
+    
+def compute_conf_xyz(xyz_path, program='xtb', method='GFN2-xTB', basis=None, solvent=None):
+    """
+    Creates a conformer ensemble from a single .xyz file.
+    No need to optimize the structure, it is processed as is.
+    """
+
+    # create conformer ensemble from the .xyz file
+    elements, coords = read_xyz(xyz_path)
+    ce = ConformerEnsemble(elements = elements)
+    ce.add_conformers([coords])
+    # compute xtb for descriptor calculations
+    ce[0].xtb = XTB(ce.elements, ce[0].coordinates, solvent=solvent, version='2')
+
+    return ce
 
 def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
                     sterimol_pairs=[]):

@@ -1,7 +1,7 @@
 import os
 import logging
 from rdkit import Chem
-from autoqchem_local.morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, InvalidSmiles, Conformer, get_descriptors
+from autoqchem_local.morfeus_ml.morfeus_descriptors import compute, compute_with_xyz, compute_conf_crest, compute_conf_xyz, InvalidSmiles, Conformer, get_descriptors
 from morfeus import read_xyz
 from pandas import DataFrame
 
@@ -95,3 +95,22 @@ class MorfeusGenerator:
         descs = DataFrame([descs.values], columns=descs.index)
 
         return descs
+        
+    def extract_properties_xyz(self, xyz_path, output_path):
+        """
+        Extract the morfeus properties of a single .xyz file. 
+        Given that there is only 1 structure, there is no point to energies or emin/boltz. 
+        Only a single value is extracted for each property.
+        """
+        
+        ce = compute_conf_xyz(xyz_path, solvent=self.solvent)
+        
+        # Calculate the descriptors and group inside a DataFrame
+        descs = get_descriptors(ce)
+        res = DataFrame([descs.values], columns=descs.index)
+        res.dropna(axis=1, inplace=True)
+        res.columns = [x.split('_Emin')[0] for x in res.columns]
+        
+        os.makedirs(f"{output_path}", exist_ok=True)
+        res.insert(0, 'smiles', '')
+        res.to_csv(f"{output_path}/morf_xyz.csv", index=False)
