@@ -66,6 +66,22 @@ class MorfeusGenerator:
         os.makedirs(f"{output_path}", exist_ok=True)
         res.insert(0, 'smiles', smiles)
         res.to_csv(f"{output_path}/{file_name}.csv", index=False)
+        
+    def extract_properties_compound_crest(self, crest_output_folder, output_path):
+        """
+        Extract the morfeus properties of a CREST output.
+        The results are written into a .csv file.
+        """
+        
+        ce = compute_conf_crest(crest_output_folder, n_confs=self.n_confs, solvent=self.solvent)
+
+        # Calculate the descriptors of the ensemble
+        descs = get_descriptors(ce)
+        res = DataFrame([descs.values], columns=descs.index)
+
+        os.makedirs(f"{output_path}", exist_ok=True)
+        res.insert(0, 'smiles', '')
+        res.to_csv(f"{output_path}/{crest_output_folder.split('/')[-1]}.csv", index=False)
             
     def extract_properties_mol(self, mol):
         """

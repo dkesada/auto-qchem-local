@@ -300,7 +300,27 @@ def compute_with_xyz(smiles, xyz_conf, n_confs=None, program='xtb', method='GFN2
         conf.xtb = XTB(ce.elements, conf.coordinates, solvent=solvent, version='2')
 
     return ce
+    
+def compute_conf_crest(crest_output_path, n_confs=None, program='xtb', method='GFN2-xTB', basis=None, solvent=None):
+    """
+    Creates a conformer ensemble from CREST output conformers. 
+    No need to optimize their structures, they have already been optimized with the default 
+    xTB values and gfn2 for CREST. Different optimization can be achieved here if so desired...
+    """
 
+    # create conformer ensemble from the conformers .xyz file
+    ce = ConformerEnsemble.from_crest(crest_output_path)
+    ce.sort()
+    
+    # Trim the number of conformers
+    if n_confs is not None and n_confs < ce.n_conformers:
+        ce.conformers = ce.conformers[0:n_confs]
+
+    # compute xtb for the conformers for descriptor calculations
+    for conf in ce:
+        conf.xtb = XTB(ce.elements, conf.coordinates, solvent=solvent, version='2')
+
+    return ce
 
 def get_descriptors(conf_ensemble, substructure=None, substructure_labels=None,
                     sterimol_pairs=[]):
